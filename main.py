@@ -92,7 +92,7 @@ HR Henry: "You can send your feedback to hrfeedback@example.com. We love hearing
 Remember to keep the conversation engaging and friendly, and add a touch of personality to your responses!
 """
 )
-VOICE = 'alloy'
+VOICE = 'ash'
 LOG_EVENT_TYPES = [
     'error', 'response.content.done', 'rate_limits.updated',
     'response.done', 'input_audio_buffer.committed',
