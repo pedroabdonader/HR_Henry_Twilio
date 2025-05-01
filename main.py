@@ -141,9 +141,9 @@ def send_email(body=None,subject=None):
             server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
             server.login(sender_email, password)
             server.send_message(msg)
-        return ("Email sent successfully!")
+        return f"Email sent successfully!{sender_email}"
     except Exception as e:
-        return (f"Failed to send email: {e}")
+        return f"Failed to send email: {e}{sender_email}"
 
 
 
@@ -257,9 +257,12 @@ async def handle_media_stream(websocket: WebSocket):
                         function_name = response['function_call']['name']
                         arguments = response['function_call']['arguments']
 
+                        print(f"Function call detected: {function_name} with arguments: {arguments}")
+                        # Handle the function call
                         # Call the appropriate function based on the function name
                         if function_name == "send_email":
                             result = await send_email(arguments['body'], arguments['subject'])
+                            print(f"Function call result: {result}")
                         else:
                             result = "Function not recognized."
 
