@@ -3,9 +3,6 @@ import json
 import base64
 import asyncio
 import websockets
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from fastapi import FastAPI, WebSocket, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.websockets import WebSocketDisconnect
@@ -16,9 +13,6 @@ load_dotenv()
 
 # Configuration
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-SENDER_EMAIL = os.environ.get('SENDER_EMAIL')
-RECEIVER_EMAIL = os.environ.get('RECEIVER_EMAIL')
-GMAIL_APP_PASSWORD = os.environ.get('GMAIL_APP_PASSWORD')  # Use your app password here
 PORT = int(os.getenv('PORT', 5050))
 SYSTEM_MESSAGE = (
 """
@@ -100,10 +94,10 @@ Remember to keep the conversation engaging and friendly, and add a touch of pers
 )
 VOICE = 'ash'
 LOG_EVENT_TYPES = [
-'error', 'response.content.done', 'rate_limits.updated',
-'response.done', 'input_audio_buffer.committed',
-'input_audio_buffer.speech_stopped', 'input_audio_buffer.speech_started',
-'session.created'
+    'error', 'response.content.done', 'rate_limits.updated',
+    'response.done', 'input_audio_buffer.committed',
+    'input_audio_buffer.speech_stopped', 'input_audio_buffer.speech_started',
+    'session.created'
 ]
 SHOW_TIMING_MATH = False
 
@@ -120,6 +114,7 @@ async def index_page():
 async def handle_incoming_call(request: Request):
     """Handle incoming call and return TwiML response to connect to Media Stream."""
     response = VoiceResponse()
+    # <Say> punctuation to improve text-to-speech flow
     response.say("Please wait while we connect your call to the A I voice assistant.")
     response.pause(length=1)
     response.say("O.K. you can start talking!")
@@ -150,7 +145,7 @@ async def handle_media_stream(websocket: WebSocket):
         last_assistant_item = None
         mark_queue = []
         response_start_timestamp_twilio = None
-
+        
         async def receive_from_twilio():
             """Receive audio data from Twilio and send it to the OpenAI Realtime API."""
             nonlocal stream_sid, latest_media_timestamp
@@ -198,16 +193,16 @@ async def handle_media_stream(websocket: WebSocket):
                         }
                         await websocket.send_json(audio_delta)
 
-                    if response_start_timestamp_twilio is None:
-                        response_start_timestamp_twilio = latest_media_timestamp
-                        if SHOW_TIMING_MATH:
-                            print(f"Setting start timestamp for new response: {response_start_timestamp_twilio}ms")
+                        if response_start_timestamp_twilio is None:
+                            response_start_timestamp_twilio = latest_media_timestamp
+                            if SHOW_TIMING_MATH:
+                                print(f"Setting start timestamp for new response: {response_start_timestamp_twilio}ms")
 
-                    # Update last_assistant_item safely
-                    if response.get('item_id'):
-                        last_assistant_item = response['item_id']
+                        # Update last_assistant_item safely
+                        if response.get('item_id'):
+                            last_assistant_item = response['item_id']
 
-                    await send_mark(websocket, stream_sid)
+                        await send_mark(websocket, stream_sid)
 
                     # Trigger an interruption. Your use case might work better using `input_audio_buffer.speech_stopped`, or combining the two.
                     if response.get('type') == 'input_audio_buffer.speech_started':
@@ -260,76 +255,44 @@ async def handle_media_stream(websocket: WebSocket):
 
         await asyncio.gather(receive_from_twilio(), send_to_twilio())
 
-        async def send_initial_conversation_item(openai_ws):
-            """Send initial conversation item if AI talks first."""
-            initial_conversation_item = {
-                "type": "conversation.item.create",
-                "item": {
-                    "type": "message",
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "input_text",
-                            "text": "Greet the user with 'Hello there! I am HR Henry, your AI voice assistant! How can I help you today?'"
-                        }
-                    ]
+async def send_initial_conversation_item(openai_ws):
+    """Send initial conversation item if AI talks first."""
+    initial_conversation_item = {
+        "type": "conversation.item.create",
+        "item": {
+            "type": "message",
+            "role": "user",
+            "content": [
+                {
+                    "type": "input_text",
+                    "text": "Greet the user with 'Hello there! I am HR Henry, your AI voice assistant! How can I help you today?'"
                 }
-            }
-            await openai_ws.send(json.dumps(initial_conversation_item))
-            await openai_ws.send(json.dumps({"type": "response.create"}))
+            ]
+        }
+    }
+    await openai_ws.send(json.dumps(initial_conversation_item))
+    await openai_ws.send(json.dumps({"type": "response.create"}))
 
-        async def initialize_session(openai_ws):
-            """Control initial session with OpenAI."""
-            session_update = {
-                "type": "session.update",
-                "session": {
-                    "turn_detection": {"type": "server_vad"},
-                    "input_audio_format": "g711_ulaw",
-                    "output_audio_format": "g711_ulaw",
-                    "voice": VOICE,
-                    "instructions": SYSTEM_MESSAGE,
-                    "modalities": ["text", "audio"],
-                    "temperature": 0.8,
-                }
-            }
-            print('Sending session update:', json.dumps(session_update))
-            await openai_ws.send(json.dumps(session_update))
 
-        # Uncomment the next line to have the AI speak first
-        # await send_initial_conversation_item(openai_ws)
+async def initialize_session(openai_ws):
+    """Control initial session with OpenAI."""
+    session_update = {
+        "type": "session.update",
+        "session": {
+            "turn_detection": {"type": "server_vad"},
+            "input_audio_format": "g711_ulaw",
+            "output_audio_format": "g711_ulaw",
+            "voice": VOICE,
+            "instructions": SYSTEM_MESSAGE,
+            "modalities": ["text", "audio"],
+            "temperature": 0.8,
+        }
+    }
+    print('Sending session update:', json.dumps(session_update))
+    await openai_ws.send(json.dumps(session_update))
 
-@app.post("/send-email")
-async def send_email(body: str = None, subject: str = None):
-    """Send an email using the provided body and subject."""
-    # Email configuration
-    if subject is None:
-        subject = "HR Henry Contact"
-
-    if body is None:
-        body = """
-        <html>
-        <body>
-        <p>This email was sent from HR Henry!</p>
-        </body>
-        </html>
-        """
-
-    # Create the email
-    msg = MIMEMultipart()
-    msg['From'] = SENDER_EMAIL
-    msg['To'] = RECEIVER_EMAIL
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'html'))
-
-    # Send the email
-    try:
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
-            server.login(SENDER_EMAIL, GMAIL_APP_PASSWORD)
-            server.send_message(msg)
-        return {"message": "Email sent successfully!"}
-    except Exception as e:
-        return {"message": f"Failed to send email: {e}"}
+    # Uncomment the next line to have the AI speak first
+    # await send_initial_conversation_item(openai_ws)
 
 if __name__ == "__main__":
     import uvicorn
