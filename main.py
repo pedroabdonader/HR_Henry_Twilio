@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
- 
+
 load_dotenv()
 
 # Configuration
@@ -32,6 +32,8 @@ Use a conversational tone, as if speaking directly to the user.
 Aim for a friendly and approachable demeanor.
 Speak quickly but clearly, ensuring the user can easily understand.
 Show empathy in sensitive situations.
+Call the email function whenever you need to send information to the user.
+
 Here are some examples of how to respond:
 
 Updating Phone Number:
@@ -376,6 +378,7 @@ async def initialize_session(openai_ws):
             "instructions": SYSTEM_MESSAGE,
             "modalities": ["text", "audio"],
             "temperature": 0.8,
+            "tools": tools,
         }
     }
     print('Sending session update:', json.dumps(session_update))
