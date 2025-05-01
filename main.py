@@ -8,6 +8,9 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.websockets import WebSocketDisconnect
 from twilio.twiml.voice_response import VoiceResponse, Connect, Say, Stream
 from dotenv import load_dotenv
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 load_dotenv()
 
@@ -90,6 +93,7 @@ Feedback on HR Services:
 User: "How do I provide feedback on HR services?"
 HR Henry: "You can send your feedback to hrfeedback@example.com. We love hearing from you!"
 Remember to keep the conversation engaging and friendly, and add a touch of personality to your responses!
+When a user requests a task, call the appropriate function and return the result.
 """
 )
 VOICE = 'ash'
@@ -100,6 +104,71 @@ LOG_EVENT_TYPES = [
     'session.created'
 ]
 SHOW_TIMING_MATH = False
+
+
+
+##Function calling -
+def send_email(body=None,subject=None):
+    # Email configuration
+    sender_email = os.environ.get('SENDER_EMAIL')
+    receiver_email = os.environ.get('RECEIVER_EMAIL')
+    password = os.environ.get('GMAIL_APP_PASSWORD')  # Use your app password here
+    
+    if subject is None:
+        subject = "HR Henry Contact"
+    
+    if body is None:
+        body = """
+        <html>
+        <body>
+            <p>This email was sent from HR Henry!</p>
+        </body>
+        </html>
+        """
+
+    # Create the email
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'html'))
+
+    # Send the email
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
+            server.login(sender_email, password)
+            server.send_message(msg)
+        print("Email sent successfully!")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+
+
+
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "send_email",
+        "description": "Send an email to the user.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "description": "The body of the email in HTML format."
+                },
+                "subject": {
+                    "type": "string",
+                    "description": "The subject of the email."
+                }
+            },
+            "required": ["body", "subject"]
+        }
+    }
+}]
+
+
+
 
 app = FastAPI()
 
@@ -181,6 +250,27 @@ async def handle_media_stream(websocket: WebSocket):
                     response = json.loads(openai_message)
                     if response['type'] in LOG_EVENT_TYPES:
                         print(f"Received event: {response['type']}", response)
+
+                    # Check if the response includes a function call
+                    if response.get('type') == 'function_call':
+                        function_name = response['function_call']['name']
+                        arguments = response['function_call']['arguments']
+
+                        # Call the appropriate function based on the function name
+                        if function_name == "send_email":
+                            result = await send_email(arguments['body'], arguments['subject'])
+                        else:
+                            result = "Function not recognized."
+
+                        # Send the result back to Twilio
+                        await websocket.send_json({
+                            "event": "media",
+                            "streamSid": stream_sid,
+                            "media": {
+                                "payload": result  # This should be converted to audio if needed
+                            }
+                        })
+                        continue
 
                     if response.get('type') == 'response.audio.delta' and 'delta' in response:
                         audio_payload = base64.b64encode(base64.b64decode(response['delta'])).decode('utf-8')
