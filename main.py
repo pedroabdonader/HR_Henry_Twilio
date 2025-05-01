@@ -149,25 +149,24 @@ def send_email(body=None,subject=None):
 
 tools = [{
     "type": "function",
-    "function": {
-        "name": "send_email",
-        "description": "Send an email to the user.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "body": {
-                    "type": "string",
-                    "description": "The body of the email in HTML format."
-                },
-                "subject": {
-                    "type": "string",
-                    "description": "The subject of the email."
-                }
+    "name": "send_email",  # This is the required name
+    "description": "Send an email to the user.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "body": {
+                "type": "string",
+                "description": "The body of the email in HTML format."
             },
-            "required": ["body", "subject"]
-        }
+            "subject": {
+                "type": "string",
+                "description": "The subject of the email."
+            }
+        },
+        "required": ["body", "subject"]
     }
 }]
+
 
 
 
