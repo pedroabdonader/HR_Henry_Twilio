@@ -248,6 +248,7 @@ async def handle_media_stream(websocket: WebSocket):
 
                     # Check for function call response
                     if response.get('type') == 'response.function_call':
+                        print("Function call detected in response.")
                         function_call = response['function_call']
                         args = json.loads(function_call['arguments'])
                         print(f"Calling function: {function_call['name']} with args: {args}")
@@ -273,6 +274,7 @@ async def handle_media_stream(websocket: WebSocket):
 
 
                     if response.get('type') == 'response.audio.delta' and 'delta' in response:
+                        print("Received audio delta from OpenAI.")
                         audio_payload = base64.b64encode(base64.b64decode(response['delta'])).decode('utf-8')
                         audio_delta = {
                             "event": "media",
