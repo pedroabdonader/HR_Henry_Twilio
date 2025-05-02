@@ -244,39 +244,36 @@ async def handle_media_stream(websocket: WebSocket):
                 async for openai_message in openai_ws:
                     response = json.loads(openai_message)
                     if response['type'] in LOG_EVENT_TYPES:
-                        print(f"Received event: {response.get('type')}", response)
+                        print(f"Received event: {response['type']}", response)
 
-                # Check for function call response in the output array
-                if response.get('type') == 'response.done' and 'output' in response['response']:
-                    for item in response['response']['output']:
-                        if item['type'] == 'function_call':
-                            function_call = item
-                            args = json.loads(function_call['arguments'])
-                            print(f"Calling function: {function_call['name']} with args: {args}")
+                    # Check for function call response in the output array
+                    if response.get('type') == 'response.done' and 'output' in response['response']:
+                        for item in response['response']['output']:
+                            if item['type'] == 'function_call':
+                                function_call = item
+                                args = json.loads(function_call['arguments'])
+                                print(f"Calling function: {function_call['name']} with args: {args}")
 
-                            # Call the function and handle the response
-                            try:
-                                result = call_function(function_call['name'], args)
-                                # Send the result back to OpenAI if needed
-                                await openai_ws.send(json.dumps({
-                                    "type": "response.function_call.done",
-                                    "item_id": function_call['id'],  # Use the function call ID
-                                    "result": result  # Send the result back if needed
-                                }))
-                            except Exception as e:
-                                print(f"Error calling function: {e}")
-                                # Optionally, send an error response back to OpenAI
-                                await openai_ws.send(json.dumps({
-                                    "type": "response.function_call.error",
-                                    "item_id": function_call['id'],
-                                    "error": str(e)
-                                }))
-                            continue
-
+                                # Call the function and handle the response
+                                try:
+                                    result = call_function(function_call['name'], args)
+                                    # Send the result back to OpenAI if needed
+                                    await openai_ws.send(json.dumps({
+                                        "type": "response.function_call.done",
+                                        "item_id": function_call['id'],  # Use the function call ID
+                                        "result": result  # Send the result back if needed
+                                    }))
+                                except Exception as e:
+                                    print(f"Error calling function: {e}")
+                                    # Optionally, send an error response back to OpenAI
+                                    await openai_ws.send(json.dumps({
+                                        "type": "response.function_call.error",
+                                        "item_id": function_call['id'],
+                                        "error": str(e)
+                                    }))
+                                continue
 
                     if response.get('type') == 'response.audio.delta' and 'delta' in response:
-                        print("Received audio delta from OpenAI.")
-                        print(response.get('type'))
                         audio_payload = base64.b64encode(base64.b64decode(response['delta'])).decode('utf-8')
                         audio_delta = {
                             "event": "media",
