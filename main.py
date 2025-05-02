@@ -162,8 +162,7 @@ tools = [{
         },
         "required": ["subject","body"],
         "additionalProperties": False  # No additional properties allowed
-    },
-    "strict": True  # Enforce strict parameter validation
+    }
 }]
 
 
