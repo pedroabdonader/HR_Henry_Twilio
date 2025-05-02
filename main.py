@@ -247,7 +247,7 @@ async def handle_media_stream(websocket: WebSocket):
                         print(f"Received event: {response.get('type')}", response)
 
                     # Check for function call response
-                    if response.get('type') == 'function_call':
+                    if response['response']['output'][0]['type'] == 'function_call':
                         print("Function call detected in response.")
                         function_call = response['function_call']
                         args = json.loads(function_call['arguments'])
