@@ -277,7 +277,7 @@ async def handle_media_stream(websocket: WebSocket):
                                         "type": "response.cancel",  # Use a valid type for error responses
                                         "error": str(e)
                                     }))
-                                continue
+                                
 
                     if response.get('type') == 'response.audio.delta' and 'delta' in response:
                         audio_payload = base64.b64encode(base64.b64decode(response['delta'])).decode('utf-8')
