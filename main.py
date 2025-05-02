@@ -257,7 +257,7 @@ async def handle_media_stream(websocket: WebSocket):
                                 # Call the function and handle the response
                                 try:
                                     result = call_function(function_call['name'], args)
-                                    
+
                                     # Create the output as a JSON string
                                     output = json.dumps({"message": result})  # Adjust this based on what your function returns
 
@@ -270,6 +270,22 @@ async def handle_media_stream(websocket: WebSocket):
                                             "output": output  # Send the result back as a JSON string
                                         }
                                     }))
+
+                                    # Send a confirmation message to the user
+                                    confirmation_message = f"Your email has been sent successfully with subject: {args['subject']}."
+                                    await openai_ws.send(json.dumps({
+                                        "type": "conversation.item.create",
+                                        "item": {
+                                            "type": "message",
+                                            "role": "assistant",
+                                            "content": [
+                                                {
+                                                    "type": "input_text",
+                                                    "text": confirmation_message
+                                                }
+                                            ]
+                                        }
+                                    }))
                                 except Exception as e:
                                     print(f"Error calling function: {e}")
                                     # Optionally, send an error response back to OpenAI
@@ -277,7 +293,7 @@ async def handle_media_stream(websocket: WebSocket):
                                         "type": "response.cancel",  # Use a valid type for error responses
                                         "error": str(e)
                                     }))
-                                continue
+                                    continue
 
                     if response.get('type') == 'response.audio.delta' and 'delta' in response:
                         audio_payload = base64.b64encode(base64.b64decode(response['delta'])).decode('utf-8')
@@ -290,16 +306,16 @@ async def handle_media_stream(websocket: WebSocket):
                         }
                         await websocket.send_json(audio_delta)
 
-                        if response_start_timestamp_twilio is None:
-                            response_start_timestamp_twilio = latest_media_timestamp
-                            if SHOW_TIMING_MATH:
-                                print(f"Setting start timestamp for new response: {response_start_timestamp_twilio}ms")
+                    if response_start_timestamp_twilio is None:
+                        response_start_timestamp_twilio = latest_media_timestamp
+                    if SHOW_TIMING_MATH:
+                        print(f"Setting start timestamp for new response: {response_start_timestamp_twilio}ms")
 
-                        # Update last_assistant_item safely
-                        if response.get('item_id'):
-                            last_assistant_item = response['item_id']
+                    # Update last_assistant_item safely
+                    if response.get('item_id'):
+                        last_assistant_item = response['item_id']
 
-                        await send_mark(websocket, stream_sid)
+                    await send_mark(websocket, stream_sid)
 
                     # Trigger an interruption. Your use case might work better using `input_audio_buffer.speech_stopped`, or combining the two.
                     if response.get('type') == 'input_audio_buffer.speech_started':
@@ -309,6 +325,7 @@ async def handle_media_stream(websocket: WebSocket):
                             await handle_speech_started_event()
             except Exception as e:
                 print(f"Error in send_to_twilio: {e}")
+
 
         async def handle_speech_started_event():
             """Handle interruption when the caller's speech starts."""
