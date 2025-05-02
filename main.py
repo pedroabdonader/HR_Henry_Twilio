@@ -108,6 +108,7 @@ app = FastAPI()
 
 ##Function calling functions:
 def send_email(subject, body):
+    print("Sending email with subject:", subject)
     # Email configuration
     sender_email = os.environ.get('SENDER_EMAIL')
     receiver_email = os.environ.get('RECEIVER_EMAIL')
