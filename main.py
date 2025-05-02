@@ -3,6 +3,9 @@ import json
 import base64
 import asyncio
 import websockets
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from fastapi import FastAPI, WebSocket, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.websockets import WebSocketDisconnect
@@ -103,6 +106,67 @@ SHOW_TIMING_MATH = False
 
 app = FastAPI()
 
+##Function calling functions:
+def send_email(subject, body):
+    # Email configuration
+    sender_email = os.environ.get('SENDER_EMAIL')
+    receiver_email = os.environ.get('RECEIVER_EMAIL')
+    password = os.environ.get('GMAIL_APP_PASSWORD')  # Use your app password here
+    subject = subject
+
+    if not body:
+        body = """
+        <html>
+        <body>
+            <h1>This is a test email</h1>
+            <p>This email is sent from Python with <strong>HTML formatting</strong>!</p>
+        </body>
+        </html>
+        """
+
+    # Create the email
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'html'))
+
+    # Send the email
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
+            server.login(sender_email, password)
+            server.send_message(msg)
+        return "Email sent successfully!"
+    except Exception as e:
+        return f"Failed to send email: {e}"
+
+
+# Function to call the appropriate function based on the name
+def call_function(name, args):
+    if name == "send_email":  # Check if the function is send_email
+        return send_email(**args)  # Call send_email with the provided arguments
+    else:
+        raise ValueError(f"Unknown function: {name}")  # Raise an error for unknown functions
+    
+# Define tools
+tools = [{
+    "type": "function",
+    "name": "send_email",
+    "description": "Send an email to the user with a subject and body.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "subject": {"type": "string","description": "The subject of the email."},
+            "body": {"type": "string","description": "The body of the email in HTML format."}
+        },
+        "required": ["subject","body"],
+        "additionalProperties": False  # No additional properties allowed
+    },
+    "strict": True  # Enforce strict parameter validation
+}]
+
+
 if not OPENAI_API_KEY:
     raise ValueError('Missing the OpenAI API key. Please set it in the .env file.')
 
@@ -181,6 +245,32 @@ async def handle_media_stream(websocket: WebSocket):
                     response = json.loads(openai_message)
                     if response['type'] in LOG_EVENT_TYPES:
                         print(f"Received event: {response['type']}", response)
+
+                    # Check for function call response
+                    if response.get('type') == 'response.function_call':
+                        function_call = response['function_call']
+                        args = json.loads(function_call['arguments'])
+                        print(f"Calling function: {function_call['name']} with args: {args}")
+                        
+                        # Call the function and handle the response
+                        try:
+                            result = call_function(function_call['name'], args)
+                            # Optionally, you can send the result back to OpenAI if needed
+                            await openai_ws.send(json.dumps({
+                                "type": "response.function_call.done",
+                                "item_id": response.get('item_id'),
+                                "result": result  # Send the result back if needed
+                            }))
+                        except Exception as e:
+                            print(f"Error calling function: {e}")
+                            # Optionally, send an error response back to OpenAI
+                            await openai_ws.send(json.dumps({
+                                "type": "response.function_call.error",
+                                "item_id": response.get('item_id'),
+                                "error": str(e)
+                            }))
+                        continue
+
 
                     if response.get('type') == 'response.audio.delta' and 'delta' in response:
                         audio_payload = base64.b64encode(base64.b64decode(response['delta'])).decode('utf-8')
@@ -286,6 +376,8 @@ async def initialize_session(openai_ws):
             "instructions": SYSTEM_MESSAGE,
             "modalities": ["text", "audio"],
             "temperature": 0.8,
+            "tools": tools,
+            "tool_choice": "auto"
         }
     }
     print('Sending session update:', json.dumps(session_update))
