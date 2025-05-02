@@ -245,7 +245,11 @@ async def handle_media_stream(websocket: WebSocket):
                     response = json.loads(openai_message)
                     if response['type'] in LOG_EVENT_TYPES:
                         print(f"Received event: {response['type']}", response)
-                    print(response.get('type'))
+
+
+                    print("---------------",response.get('type'))
+
+
                     # Check for function call response
                     if response.get('type') == 'function_call':
                         print("Function call detected in response.")
