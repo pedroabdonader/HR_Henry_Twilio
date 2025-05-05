@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configuration
-OPENAI_API_KEY = os.environ.get('AZUREOPENAI_API_KEY')
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 PORT = int(os.getenv('PORT', 5050))
 SYSTEM_MESSAGE = (
 """
@@ -195,7 +195,7 @@ async def handle_media_stream(websocket: WebSocket):
     await websocket.accept()
 
     async with websockets.connect(
-        'wss://swccoai10raoa01.openai.azure.com/openai/realtime?api-version=2024-10-01-preview&deployment=gpt-4o-mini-realtime-preview',
+        'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01',
         extra_headers={
             "Authorization": f"Bearer {OPENAI_API_KEY}",
             "OpenAI-Beta": "realtime=v1"
@@ -259,9 +259,8 @@ async def handle_media_stream(websocket: WebSocket):
                                     result = call_function(function_call['name'], args)
                                     
                                     # Create the output as a JSON string
-                                    output = f'{function_call['name']}: {result}'  # Adjust this based on what your function returns
+                                    output = json.dumps({"message": result})  # Adjust this based on what your function returns
 
-                                    print(f" ---------------------------------------------------------- Function call result: {result}")
                                     # Send the result back to OpenAI as a function call output
                                     await openai_ws.send(json.dumps({
                                         "type": "conversation.item.create",
@@ -278,7 +277,7 @@ async def handle_media_stream(websocket: WebSocket):
                                         "type": "response.cancel",  # Use a valid type for error responses
                                         "error": str(e)
                                     }))
-                                
+                                continue
 
                     if response.get('type') == 'response.audio.delta' and 'delta' in response:
                         audio_payload = base64.b64encode(base64.b64decode(response['delta'])).decode('utf-8')
