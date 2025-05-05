@@ -267,7 +267,7 @@ async def handle_media_stream(websocket: WebSocket):
                                         "item": {
                                             "type": "function_call_output",
                                             "call_id": function_call['call_id'],  # Use the call_id from the function call
-                                            "output": output  # Send the result back as a JSON string
+                                            "output": result  # Send the result back as a JSON string
                                         }
                                     }))
                                 except Exception as e:
