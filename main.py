@@ -199,7 +199,6 @@ async def handle_media_stream(websocket: WebSocket):
         extra_headers={"api-key": OPENAI_API_KEY}
     ) as openai_ws:
         await initialize_session(openai_ws)
-        await send_initial_conversation_item(openai_ws)
 
         # Connection specific state
         stream_sid = None
@@ -208,7 +207,6 @@ async def handle_media_stream(websocket: WebSocket):
         mark_queue = []
         response_start_timestamp_twilio = None
         
-        send_initial_conversation_item(openai_ws)
         async def receive_from_twilio():
             """Receive audio data from Twilio and send it to the OpenAI Realtime API."""
             nonlocal stream_sid, latest_media_timestamp
@@ -396,7 +394,7 @@ async def initialize_session(openai_ws):
     await openai_ws.send(json.dumps(session_update))
 
     # Uncomment the next line to have the AI speak first
-    # await send_initial_conversation_item(openai_ws)
+    await send_initial_conversation_item(openai_ws)
 
 if __name__ == "__main__":
     import uvicorn
