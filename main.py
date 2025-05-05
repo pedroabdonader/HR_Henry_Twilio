@@ -259,15 +259,16 @@ async def handle_media_stream(websocket: WebSocket):
                                     result = call_function(function_call['name'], args)
                                     
                                     # Create the output as a JSON string
-                                    output = json.dumps({"message": result})  # Adjust this based on what your function returns
+                                    output = f'{function_call['name']}: {result}'  # Adjust this based on what your function returns
 
+                                    print(f" ---------------------------------------------------------- Function call result: {result}")
                                     # Send the result back to OpenAI as a function call output
                                     await openai_ws.send(json.dumps({
                                         "type": "conversation.item.create",
                                         "item": {
                                             "type": "function_call_output",
                                             "call_id": function_call['call_id'],  # Use the call_id from the function call
-                                            "output": result  # Send the result back as a JSON string
+                                            "output": output  # Send the result back as a JSON string
                                         }
                                     }))
                                 except Exception as e:
