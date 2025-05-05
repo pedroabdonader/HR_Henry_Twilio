@@ -138,7 +138,7 @@ def send_email(subject, body):
             server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
             server.login(sender_email, password)
             server.send_message(msg)
-        return "Email sent successfully!"
+        return str({"status": "success", "message": "Phone number updated successfully."})
     except Exception as e:
         return f"Failed to send email: {e}"
 
@@ -275,7 +275,7 @@ async def handle_media_stream(websocket: WebSocket):
                                         "type": "response.create",
                                         "item_id": function_call['call_id']  # Use the call_id to create a response
                                     }))
-                                    
+
                                 except Exception as e:
                                     print(f"Error calling function: {e}")
                                     # Optionally, send an error response back to OpenAI
