@@ -181,7 +181,7 @@ async def handle_incoming_call(request: Request):
     # <Say> punctuation to improve text-to-speech flow
     response.say("Please wait while we connect your call to the A I voice assistant.")
     response.pause(length=1)
-    response.say("O.K. you can start talking!")
+    #response.say("O.K. you can start talking!")
     host = request.url.hostname
     connect = Connect()
     connect.stream(url=f'wss://{host}/media-stream')
