@@ -256,6 +256,9 @@ async def handle_media_stream(websocket: WebSocket):
 
                                 # Call the function and handle the response
                                 try:
+
+                                    await openai_ws.send(json.dumps({"type": "response.create"}))
+
                                     result = call_function(function_call['name'], args)
                                     
                                     # Create the output as a JSON string
