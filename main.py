@@ -182,7 +182,7 @@ async def index_page():
 async def handle_incoming_call(request: Request):
     """Handle incoming call and return TwiML response to connect to Media Stream."""
 
-    caller_number = request.query_params.get("From")  # Get the caller's number from the request
+    caller_number = request.query_params  # Get the caller's number from the request
 
     print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------",caller_number)
     # if caller_number not in ALLOWED_NUMBERS:
