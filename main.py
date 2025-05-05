@@ -166,6 +166,10 @@ tools = [{
     }
 }]
 
+ALLOWED_NUMBERS = [
+    "+18138165928"
+]
+
 
 if not OPENAI_API_KEY:
     raise ValueError('Missing the OpenAI API key. Please set it in the .env file.')
@@ -177,6 +181,16 @@ async def index_page():
 @app.api_route("/incoming-call", methods=["GET", "POST"])
 async def handle_incoming_call(request: Request):
     """Handle incoming call and return TwiML response to connect to Media Stream."""
+
+    caller_number = request.query_params.get("From")  # Get the caller's number from the request
+
+    if caller_number not in ALLOWED_NUMBERS:
+        # If the caller is not allowed, respond with a message
+        response = VoiceResponse()
+        response.say("Sorry, your number is not authorized to make this call.")
+        return HTMLResponse(content=str(response), media_type="application/xml")
+    
+
     response = VoiceResponse()
     # <Say> punctuation to improve text-to-speech flow
     response.say("Please wait while we connect your call to the A I voice assistant.")
