@@ -196,7 +196,7 @@ async def handle_media_stream(websocket: WebSocket):
 
     async with websockets.connect(
         'wss://hrassistantfou5292951088.openai.azure.com/openai/realtime?api-version=2024-10-01-preview&deployment=gpt-4o-mini-realtime-preview',
-        additional_headers={"api-key": OPENAI_API_KEY}
+        extra_headers={"api-key": OPENAI_API_KEY}
     ) as openai_ws:
         await initialize_session(openai_ws)
         await send_initial_conversation_item(openai_ws)
