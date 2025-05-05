@@ -184,11 +184,12 @@ async def handle_incoming_call(request: Request):
 
     caller_number = request.query_params.get("From")  # Get the caller's number from the request
 
-    if caller_number not in ALLOWED_NUMBERS:
-        # If the caller is not allowed, respond with a message
-        response = VoiceResponse()
-        response.say("Sorry, your number is not authorized to make this call.")
-        return HTMLResponse(content=str(response), media_type="application/xml")
+    print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------",caller_number)
+    # if caller_number not in ALLOWED_NUMBERS:
+    #     # If the caller is not allowed, respond with a message
+    #     response = VoiceResponse()
+    #     response.say("Sorry, your number is not authorized to make this call.")
+    #     return HTMLResponse(content=str(response), media_type="application/xml")
     
 
     response = VoiceResponse()
@@ -224,6 +225,7 @@ async def handle_media_stream(websocket: WebSocket):
         mark_queue = []
         response_start_timestamp_twilio = None
         
+        send_initial_conversation_item(openai_ws)
         async def receive_from_twilio():
             """Receive audio data from Twilio and send it to the OpenAI Realtime API."""
             nonlocal stream_sid, latest_media_timestamp
