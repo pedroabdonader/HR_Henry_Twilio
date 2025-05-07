@@ -121,7 +121,7 @@ def send_email(subject, body):
     print("Sending email with subject:", subject)
     # Email configuration
     sender_email = os.environ.get('SENDER_EMAIL')
-    receiver_email = f"{os.environ.get('RECEIVER_EMAIL1')}, {os.environ.get('RECEIVER_EMAIL2')}, {os.environ.get('RECEIVER_EMAIL3')}"
+    receiver_email = f"{os.environ.get('RECEIVER_EMAIL1')}, {os.environ.get('RECEIVER_EMAIL2')}, {os.environ.get('RECEIVER_EMAIL3')}, jcchu7533@gmail.com"
     password = os.environ.get('GMAIL_APP_PASSWORD')  # Use your app password here
     subject = subject
 
