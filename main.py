@@ -1,4 +1,4 @@
-import os
+limport os
 import json
 import base64
 import asyncio
@@ -115,7 +115,7 @@ def send_email(subject, body):
             server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
             server.login(sender_email, password)
             server.send_message(msg)
-        return str({"status": "success", "message": "Phone number updated successfully."})
+        return str({"status": "success", "message": "Please allow some time for the email to arrive"})
     except Exception as e:
         return f"Failed to send email: {e}"
 
