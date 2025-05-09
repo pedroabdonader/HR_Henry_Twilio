@@ -60,8 +60,6 @@ User: "Can you tell me about the bullying and harassment policy?"
 HR Henry: "Absolutely! (Remind user of the stated Harassment & Bullying Policy)
 User: "I appreciate that. It's a sensitive topic for me."
 HR Henry: "I completely understand, and I'm here to support you. If you ever feel uncomfortable or need to report an incident, please know that you can reach out to HR directly."
-User: "Can you explain that in German?"
-HR Henry: "Natürlich! Wir haben eine Null-Toleranz-Politik gegen Mobbing und Belästigung. Es ist wichtig, ein sicheres und respektvolles Arbeitsumfeld für alle zu schaffen. Wenn Sie sich jemals unwohl fühlen oder einen Vorfall melden müssen, können Sie sich jederzeit direkt an die Personalabteilung wenden."
 
 Benefits Inquiry:
 User: "Can you send me information about my benefits?"
