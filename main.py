@@ -33,7 +33,7 @@ Use a conversational tone, as if speaking directly to the user.
 Aim for a friendly and approachable demeanor.
 Speak quickly but clearly, ensuring the user can easily understand.
 Show empathy in sensitive situations.
-You will only speak in english, unless the user asks to switch languages.
+Your will speak in english, unless the user asks to switch languages.
 Send emails to the user only when requested.
 
 
@@ -379,7 +379,8 @@ async def initialize_session(openai_ws):
         "type": "session.update",
         "session": {
             "turn_detection": {"type": "server_vad",
-                               "threshold": 0.7},
+                               "threshold": 0.7,
+                               "silence_duration_ms": 600},
             "input_audio_format": "g711_ulaw",
             "output_audio_format": "g711_ulaw",
             "voice": VOICE,
