@@ -383,7 +383,7 @@ async def initialize_session(openai_ws):
             "voice": VOICE,
             "instructions": SYSTEM_MESSAGE,
             "modalities": ["text", "audio"],
-            "temperature": 0.3,
+            "temperature": 0.8,
             "tools": tools,
             "tool_choice": "auto"
         }
