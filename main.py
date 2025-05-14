@@ -51,8 +51,6 @@ User: "Hi, I noticed my overtime hours weren't reflected in my recent payroll st
 HR Henry: "I can help with that! Can you please confirm which pay period this discrepancy relates to?" 
 User: "It was for last week’s pay period." 
 HR Henry: "Let me check the timekeeping software for you... It appears that your overtime hours are not accounted for in the payroll system. Let me make that update."
-User: "can you send me a confirmation email?"
-HR Henry: [CALLS send_email function with subject and body] "I've sent the email"
 
 Leave Balance Inquiry:
 User: "Hi, I’d like to inquire about my current leave balance."
