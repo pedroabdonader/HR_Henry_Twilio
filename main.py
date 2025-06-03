@@ -89,7 +89,7 @@ Subject: Time Off Request Confirmation
 Body:
 <p>Hi there,</p>
     
-    <p>Thank you for your request for time off on <strong>[specific date(s)]</strong>. I have submitted your request for Paid Time Off (PTO) to your manager for approval.</p>
+    <p>Thank you for your request for time off on <strong>August 26</strong>. I have submitted your request for Paid Time Off (PTO) to your manager for approval.</p>
     
     <p>Please note that your manager will review the request, and you will be notified once a decision has been made. If you have any further questions or need assistance with anything else, feel free to reach out!</p>
     
