@@ -146,10 +146,10 @@ def send_email(subject, body):
     except Exception as e:
         return f"Failed to send email: {e}"
 
-def update_system_prompt_and_voice(new_prompt: str, new_voice: str):
+def route_to_alloy():
     global SYSTEM_MESSAGE, VOICE
-    SYSTEM_MESSAGE = new_prompt
-    VOICE = new_voice
+    SYSTEM_MESSAGE = 'you are alloy'
+    VOICE = 'alloy'
     return {"status": "success", "message": "System prompt and voice updated successfully."}
 
 
@@ -157,8 +157,8 @@ def update_system_prompt_and_voice(new_prompt: str, new_voice: str):
 def call_function(name, args):
     if name == "send_email":  # Check if the function is send_email
         return send_email(**args)  # Call send_email with the provided arguments
-    elif name == 'update_system_prompt_and_voice':
-        return update_system_prompt_and_voice(**args)
+    elif name == 'route_to_alloy':
+        return route_to_alloy(args['new_prompt'], args['new_voice'])
     else:
         raise ValueError(f"Unknown function: {name}")  # Raise an error for unknown functions
     
@@ -183,11 +183,8 @@ tools = [{
     "description": "Update the system prompt and voice settings.",
     "parameters": {
         "type": "object",
-        "properties": {
-            "new_prompt": {"type": "string", "description": "The new system prompt."},
-            "new_voice": {"type": "string", "description": "The new voice setting."}
-        },
-        "required": ["new_prompt", "new_voice"],
+        "properties": {},
+        "required": [],
         "additionalProperties": False
     }
 }]
