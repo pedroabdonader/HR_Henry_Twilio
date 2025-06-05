@@ -180,7 +180,7 @@ tools = [{
 {
     "type": "function",
     "name": "route_to_alloy",
-    "description": "Update the system prompt and voice settings.",
+    "description": "Route the call to Alloy. Use this tool if user asks to speak with Alloy",
     "parameters": {
         "type": "object",
         "properties": {},
