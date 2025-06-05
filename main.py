@@ -179,7 +179,7 @@ tools = [{
 },
 {
     "type": "function",
-    "name": "update_system_prompt_and_voice",
+    "name": "route_to_alloy",
     "description": "Update the system prompt and voice settings.",
     "parameters": {
         "type": "object",
