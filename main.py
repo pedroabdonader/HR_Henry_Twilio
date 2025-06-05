@@ -146,19 +146,11 @@ def send_email(subject, body):
     except Exception as e:
         return f"Failed to send email: {e}"
 
-def route_to_alloy():
-    global SYSTEM_MESSAGE, VOICE
-    SYSTEM_MESSAGE = 'you are alloy'
-    VOICE = 'alloy'
-    return {"status": "success", "message": "System prompt and voice updated successfully."}
-
 
 # Function to call the appropriate function based on the name
 def call_function(name, args):
     if name == "send_email":  # Check if the function is send_email
         return send_email(**args)  # Call send_email with the provided arguments
-    elif name == 'route_to_alloy':
-        return route_to_alloy(args['new_prompt'], args['new_voice'])
     else:
         raise ValueError(f"Unknown function: {name}")  # Raise an error for unknown functions
     
@@ -176,18 +168,8 @@ tools = [{
         "required": ["subject","body"],
         "additionalProperties": False  # No additional properties allowed
     }
-},
-{
-    "type": "function",
-    "name": "route_to_alloy",
-    "description": "Route the call to Alloy. Use this tool if user asks to speak with Alloy",
-    "parameters": {
-        "type": "object",
-        "properties": {},
-        "required": [],
-        "additionalProperties": False
-    }
 }]
+
 
 if not OPENAI_API_KEY:
     raise ValueError('Missing the OpenAI API key. Please set it in the .env file.')
