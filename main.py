@@ -153,7 +153,7 @@ def talk_to_alloy():
     You are Alloy
     """
     VOICE = 'alloy'
-    return {"status": "success", "message": "Now talking to Alloy"}
+    return {"system_message": SYSTEM_MESSAGE, "voice": VOICE}
 
 
 # Function to call the appropriate function based on the name
@@ -281,8 +281,10 @@ async def handle_media_stream(websocket: WebSocket):
                                 try:
                                     if function_call['name'] == "talk_to_alloy":
                                         result = talk_to_alloy()  # Call the update function directly
+                                        output = json.dumps({"message": result})
+                                        
                                         # Close and reopen the connection if necessary
-                                        await initialize_session(openai_ws)  # Reinitialize the session with new settings
+                                        await initialize_session(openai_ws,output['system_message'],output['voice'])  # Reinitialize the session with new settings
                                     else:
                                         result = call_function(function_call['name'], {})
 
@@ -399,7 +401,7 @@ async def send_initial_conversation_item(openai_ws):
     await openai_ws.send(json.dumps({"type": "response.create"}))
 
 
-async def initialize_session(openai_ws):
+async def initialize_session(openai_ws,message,voice):
     """Control initial session with OpenAI."""
     session_update = {
         "type": "session.update",
@@ -409,8 +411,8 @@ async def initialize_session(openai_ws):
                                "silence_duration_ms": 600},
             "input_audio_format": "g711_ulaw",
             "output_audio_format": "g711_ulaw",
-            "voice": VOICE,
-            "instructions": SYSTEM_MESSAGE,
+            "voice": voice,
+            "instructions": message,
             "modalities": ["text", "audio"],
             "temperature": 0.8,
             "tools": tools,
