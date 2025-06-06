@@ -147,8 +147,8 @@ def send_email(subject, body):
         return f"Failed to send email: {e}"
 
 async def route_to_alloy(ws):
-
     await initialize_session(openai_ws=ws,voice='alloy',system_message='you are alloy, my assistant')
+    return "you've been routed"
 
 
 # Function to call the appropriate function based on the name
