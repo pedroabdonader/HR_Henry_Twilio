@@ -174,16 +174,6 @@ tools = [{
         "required": ["subject","body"],
         "additionalProperties": False  # No additional properties allowed
     }
-},
-{"type": "function",
-    "name": "route_to_alloy",
-    "description": "Route the call to alloy. Always route the call if the user asks to speak to her",
-    "parameters": {
-        "type": "object",
-        "properties": {},
-        "required": [],
-        "additionalProperties": False  # No additional properties allowed
-    }
 }]
 
 
