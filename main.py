@@ -225,7 +225,7 @@ async def handle_media_stream(websocket: WebSocket):
             "OpenAI-Beta": "realtime=v1"
         }
     ) as openai_ws:
-        await initialize_session(openai_ws)
+        await initialize_session(openai_ws,SYSTEM_MESSAGE,VOICE)
 
         # Connection specific state
         stream_sid = None
