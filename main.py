@@ -150,7 +150,7 @@ async def route(ws):
     voice = 'alloy'
     prompt = 'you are talking to alloy'
     await initialize_session(ws,voice,prompt)
-    return 'Routed Successfully'
+    return str({"status": "success", "message": "Call Routed"})
 
 # Function to call the appropriate function based on the name
 def call_function(name, args):
@@ -272,15 +272,17 @@ async def handle_media_stream(websocket: WebSocket):
                             if item['type'] == 'function_call':
                                 function_call = item
                                 args = json.loads(function_call['arguments'])
-                                
+
                                 print(f"Calling function: {function_call['name']} with args: {args}")
 
                                 # Call the function and handle the response
                                 try:
 
                                     await openai_ws.send(json.dumps({"type": "response.create"}))
-
-                                    result = call_function(function_call['name'], args)
+                                    if function_call['name'] == 'route':
+                                        result = route(openai_ws)
+                                    else:
+                                        result = call_function(function_call['name'], args)
                                     
                                     # Create the output as a JSON string
                                     output = json.dumps({"message": result})  # Adjust this based on what your function returns
