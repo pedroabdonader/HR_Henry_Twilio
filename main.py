@@ -147,11 +147,11 @@ def send_email(subject, body):
         return f"Failed to send email: {e}"
 
 async def route(ws):
-    #voice = 'alloy'
-    #prompt = 'you are talking to alloy'
-    #if ws.open:
-    #    await ws.close()
-    #await initialize_session(ws,voice,prompt)
+    voice = 'alloy'
+    prompt = 'you are talking to alloy'
+    if ws.open:
+        await ws.close()
+    await initialize_session(ws,voice,prompt)
     return str({"status": "success", "message": "Call Routed to line 4"})
 
 # Function to call the appropriate function based on the name
