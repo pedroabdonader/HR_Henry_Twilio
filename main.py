@@ -205,7 +205,7 @@ async def handle_media_stream(websocket: WebSocket):
             "OpenAI-Beta": "realtime=v1"
         }
     ) as openai_ws:
-        await initialize_session(openai_ws)
+        await initialize_session(openai_ws,VOICE,SYSTEM_MESSAGE)
 
         # Connection specific state
         stream_sid = None
@@ -381,7 +381,7 @@ async def send_initial_conversation_item(openai_ws):
     await openai_ws.send(json.dumps({"type": "response.create"}))
 
 
-async def initialize_session(openai_ws):
+async def initialize_session(openai_ws,voice,prompt):
     """Control initial session with OpenAI."""
     session_update = {
         "type": "session.update",
@@ -391,8 +391,8 @@ async def initialize_session(openai_ws):
                                "silence_duration_ms": 600},
             "input_audio_format": "g711_ulaw",
             "output_audio_format": "g711_ulaw",
-            "voice": VOICE,
-            "instructions": SYSTEM_MESSAGE,
+            "voice": voice,
+            "instructions": prompt,
             "modalities": ["text", "audio"],
             "temperature": 0.8,
             "tools": tools,
