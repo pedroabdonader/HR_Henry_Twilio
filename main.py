@@ -152,11 +152,11 @@ async def route_to_alloy(ws):
 
 
 # Function to call the appropriate function based on the name
-def call_function(name, args):
+async def call_function(name, args):
     if name == "send_email":  # Check if the function is send_email
-        return send_email(**args)  # Call send_email with the provided arguments
+        return await send_email(**args)  # Call send_email with the provided arguments
     elif name == 'route_to_alloy':
-        return route_to_alloy(**args)
+        return await route_to_alloy(**args)
     else:
         raise ValueError(f"Unknown function: {name}")  # Raise an error for unknown functions
     
