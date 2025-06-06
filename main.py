@@ -154,7 +154,7 @@ async def route_to_alloy(ws):
 # Function to call the appropriate function based on the name
 async def call_function(name, args):
     if name == "send_email":  # Check if the function is send_email
-        return await send_email(**args)  # Call send_email with the provided arguments
+        return send_email(**args)  # Call send_email with the provided arguments
     elif name == 'route_to_alloy':
         return await route_to_alloy(**args)
     else:
