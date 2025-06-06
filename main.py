@@ -173,6 +173,17 @@ tools = [{
         "required": ["subject","body"],
         "additionalProperties": False  # No additional properties allowed
     }
+},
+{
+    "type": "function",
+    "name": "route",
+    "description": "Route call to the right Agent. Transfers the call",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": False  # No additional properties allowed
+    }
 }]
 
 
@@ -261,6 +272,7 @@ async def handle_media_stream(websocket: WebSocket):
                             if item['type'] == 'function_call':
                                 function_call = item
                                 args = json.loads(function_call['arguments'])
+                                
                                 print(f"Calling function: {function_call['name']} with args: {args}")
 
                                 # Call the function and handle the response
