@@ -152,7 +152,7 @@ async def route(ws):
     #if ws.open:
     #    ws.close()
     #await initialize_session(ws,voice,prompt)
-    return str({"status": "success", "message": "Call Routed to line 4"})
+    return str({"status": "success", "message": "Call Routed"})
 
 # Function to call the appropriate function based on the name
 def call_function(name, args):
