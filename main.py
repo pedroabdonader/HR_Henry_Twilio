@@ -146,6 +146,11 @@ def send_email(subject, body):
     except Exception as e:
         return f"Failed to send email: {e}"
 
+async def route(ws):
+    voice = 'alloy'
+    prompt = 'you are talking to alloy'
+    await initialize_session(ws,voice,prompt)
+    return 'Routed Successfully'
 
 # Function to call the appropriate function based on the name
 def call_function(name, args):
