@@ -146,11 +146,17 @@ def send_email(subject, body):
     except Exception as e:
         return f"Failed to send email: {e}"
 
+async def route_to_alloy(ws):
+
+    await initialize_session(openai_ws=ws,voice='alloy',system_message='you are alloy, my assistant')
+
 
 # Function to call the appropriate function based on the name
 def call_function(name, args):
     if name == "send_email":  # Check if the function is send_email
         return send_email(**args)  # Call send_email with the provided arguments
+    elif name == 'route_to_alloy':
+        return route_to_alloy(**args)
     else:
         raise ValueError(f"Unknown function: {name}")  # Raise an error for unknown functions
     
@@ -166,6 +172,16 @@ tools = [{
             "body": {"type": "string","description": "The body of the email in HTML format with a greeting, main message, closing, and signature in different sections."}
         },
         "required": ["subject","body"],
+        "additionalProperties": False  # No additional properties allowed
+    }
+},
+{"type": "function",
+    "name": "route_to_alloy",
+    "description": "Route the call to alloy. Always route the call if the user asks to speak to her",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": [],
         "additionalProperties": False  # No additional properties allowed
     }
 }]
@@ -205,7 +221,7 @@ async def handle_media_stream(websocket: WebSocket):
             "OpenAI-Beta": "realtime=v1"
         }
     ) as openai_ws:
-        await initialize_session(openai_ws)
+        await initialize_session(openai_ws, VOICE, SYSTEM_MESSAGE)
 
         # Connection specific state
         stream_sid = None
@@ -381,7 +397,7 @@ async def send_initial_conversation_item(openai_ws):
     await openai_ws.send(json.dumps({"type": "response.create"}))
 
 
-async def initialize_session(openai_ws):
+async def initialize_session(openai_ws,voice,system_message):
     """Control initial session with OpenAI."""
     session_update = {
         "type": "session.update",
@@ -391,8 +407,8 @@ async def initialize_session(openai_ws):
                                "silence_duration_ms": 600},
             "input_audio_format": "g711_ulaw",
             "output_audio_format": "g711_ulaw",
-            "voice": VOICE,
-            "instructions": SYSTEM_MESSAGE,
+            "voice": voice,
+            "instructions": system_message,
             "modalities": ["text", "audio"],
             "temperature": 0.8,
             "tools": tools,
