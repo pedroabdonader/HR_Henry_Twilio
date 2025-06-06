@@ -146,6 +146,15 @@ def send_email(subject, body):
     except Exception as e:
         return f"Failed to send email: {e}"
 
+def talk_to_alloy():
+    global SYSTEM_MESSAGE, VOICE
+    # Set new values directly within the function
+    SYSTEM_MESSAGE = """
+    You are Alloy
+    """
+    VOICE = 'alloy'
+    return {"status": "success", "message": "Now talking to Alloy"}
+
 
 # Function to call the appropriate function based on the name
 def call_function(name, args):
@@ -167,6 +176,17 @@ tools = [{
         },
         "required": ["subject","body"],
         "additionalProperties": False  # No additional properties allowed
+    }
+},
+{
+    "type": "function",
+    "name": "talk_to_alloy",
+    "description": "Redirect to Alloy. Run this function when user asks to talk to alloy",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": False
     }
 }]
 
@@ -255,38 +275,36 @@ async def handle_media_stream(websocket: WebSocket):
                         for item in response['response']['output']:
                             if item['type'] == 'function_call':
                                 function_call = item
-                                args = json.loads(function_call['arguments'])
-                                print(f"Calling function: {function_call['name']} with args: {args}")
+                                print(f"Calling function: {function_call['name']}")
 
                                 # Call the function and handle the response
                                 try:
+                                    if function_call['name'] == "talk_to_alloy":
+                                        result = talk_to_alloy()  # Call the update function directly
+                                        # Close and reopen the connection if necessary
+                                        await initialize_session(openai_ws)  # Reinitialize the session with new settings
+                                    else:
+                                        result = call_function(function_call['name'], {})
 
-                                    await openai_ws.send(json.dumps({"type": "response.create"}))
-
-                                    result = call_function(function_call['name'], args)
-                                    
                                     # Create the output as a JSON string
-                                    output = json.dumps({"message": result})  # Adjust this based on what your function returns
+                                    output = json.dumps({"message": result})
 
                                     # Send the result back to OpenAI as a function call output
                                     await openai_ws.send(json.dumps({
                                         "type": "conversation.item.create",
                                         "item": {
                                             "type": "function_call_output",
-                                            "call_id": function_call['call_id'],  # Use the call_id from the function call
-                                            "output": output  # Send the result back as a JSON string
+                                            "call_id": function_call['call_id'],
+                                            "output": output
                                         }
                                     }))
-
-                                    await openai_ws.send(json.dumps({"type": "response.create"}))
-
                                 except Exception as e:
                                     print(f"Error calling function: {e}")
-                                    # Optionally, send an error response back to OpenAI
                                     await openai_ws.send(json.dumps({
-                                        "type": "response.cancel",  # Use a valid type for error responses
+                                        "type": "response.cancel",
                                         "error": str(e)
                                     }))
+
                                 continue
 
                     if response.get('type') == 'response.audio.delta' and 'delta' in response:
