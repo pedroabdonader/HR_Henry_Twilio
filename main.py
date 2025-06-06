@@ -146,15 +146,6 @@ def send_email(subject, body):
     except Exception as e:
         return f"Failed to send email: {e}"
 
-def talk_to_alloy():
-    global SYSTEM_MESSAGE, VOICE
-    # Set new values directly within the function
-    SYSTEM_MESSAGE = """
-    You are Alloy
-    """
-    VOICE = 'alloy'
-    return {"system_message": SYSTEM_MESSAGE, "voice": VOICE}
-
 
 # Function to call the appropriate function based on the name
 def call_function(name, args):
@@ -176,17 +167,6 @@ tools = [{
         },
         "required": ["subject","body"],
         "additionalProperties": False  # No additional properties allowed
-    }
-},
-{
-    "type": "function",
-    "name": "talk_to_alloy",
-    "description": "Redirect to Alloy. Run this function when user asks to talk to alloy",
-    "parameters": {
-        "type": "object",
-        "properties": {},
-        "required": [],
-        "additionalProperties": False
     }
 }]
 
@@ -225,7 +205,7 @@ async def handle_media_stream(websocket: WebSocket):
             "OpenAI-Beta": "realtime=v1"
         }
     ) as openai_ws:
-        await initialize_session(openai_ws,SYSTEM_MESSAGE,VOICE)
+        await initialize_session(openai_ws)
 
         # Connection specific state
         stream_sid = None
@@ -275,38 +255,38 @@ async def handle_media_stream(websocket: WebSocket):
                         for item in response['response']['output']:
                             if item['type'] == 'function_call':
                                 function_call = item
-                                print(f"Calling function: {function_call['name']}")
+                                args = json.loads(function_call['arguments'])
+                                print(f"Calling function: {function_call['name']} with args: {args}")
 
                                 # Call the function and handle the response
                                 try:
-                                    if function_call['name'] == "talk_to_alloy":
-                                        result = talk_to_alloy()  # Call the update function directly
-                                        output = json.dumps({"message": result})
-                                        
-                                        # Close and reopen the connection if necessary
-                                        await initialize_session(openai_ws,output['system_message'],output['voice'])  # Reinitialize the session with new settings
-                                    else:
-                                        result = call_function(function_call['name'], {})
 
+                                    await openai_ws.send(json.dumps({"type": "response.create"}))
+
+                                    result = call_function(function_call['name'], args)
+                                    
                                     # Create the output as a JSON string
-                                    output = json.dumps({"message": result})
+                                    output = json.dumps({"message": result})  # Adjust this based on what your function returns
 
                                     # Send the result back to OpenAI as a function call output
                                     await openai_ws.send(json.dumps({
                                         "type": "conversation.item.create",
                                         "item": {
                                             "type": "function_call_output",
-                                            "call_id": function_call['call_id'],
-                                            "output": output
+                                            "call_id": function_call['call_id'],  # Use the call_id from the function call
+                                            "output": output  # Send the result back as a JSON string
                                         }
                                     }))
+
+                                    await openai_ws.send(json.dumps({"type": "response.create"}))
+
                                 except Exception as e:
                                     print(f"Error calling function: {e}")
+                                    # Optionally, send an error response back to OpenAI
                                     await openai_ws.send(json.dumps({
-                                        "type": "response.cancel",
+                                        "type": "response.cancel",  # Use a valid type for error responses
                                         "error": str(e)
                                     }))
-
                                 continue
 
                     if response.get('type') == 'response.audio.delta' and 'delta' in response:
@@ -401,7 +381,7 @@ async def send_initial_conversation_item(openai_ws):
     await openai_ws.send(json.dumps({"type": "response.create"}))
 
 
-async def initialize_session(openai_ws,message,voice):
+async def initialize_session(openai_ws):
     """Control initial session with OpenAI."""
     session_update = {
         "type": "session.update",
@@ -411,8 +391,8 @@ async def initialize_session(openai_ws,message,voice):
                                "silence_duration_ms": 600},
             "input_audio_format": "g711_ulaw",
             "output_audio_format": "g711_ulaw",
-            "voice": voice,
-            "instructions": message,
+            "voice": VOICE,
+            "instructions": SYSTEM_MESSAGE,
             "modalities": ["text", "audio"],
             "temperature": 0.8,
             "tools": tools,
