@@ -147,8 +147,8 @@ def send_email(subject, body):
         return f"Failed to send email: {e}"
 
 async def route(ws):
-    if ws.open:
-        await ws.close()
+    if openai_ws.open:
+        await openai_ws.close()
     async with websockets.connect(
         'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01',
         extra_headers={
@@ -157,7 +157,7 @@ async def route(ws):
         }
     ) as openai_ws:
         await initialize_session(openai_ws,'alloy','You are a helpful AI assistant')
-        return openai_ws
+        return "Call Routed"
 
 # Function to call the appropriate function based on the name
 def call_function(name, args):
@@ -287,8 +287,7 @@ async def handle_media_stream(websocket: WebSocket):
 
                                     await openai_ws.send(json.dumps({"type": "response.create"}))
                                     if function_call['name'] == 'route':
-                                        openai_ws = await route(openai_ws)
-                                        result = 'Call Forwadeds'
+                                        result = await route(openai_ws)
                                     else:
                                         result = call_function(function_call['name'], args)
                                     
