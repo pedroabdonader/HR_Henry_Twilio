@@ -17,89 +17,45 @@ load_dotenv()
 # Configuration
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 PORT = int(os.getenv('PORT', 5050))
-SYSTEM_MESSAGE = (
+
+# System Messages for Different Agents
+SYSTEM_MESSAGE_ORCHESTRATION = (
 """
-System Message:
-You are an intelligent HR assistant named "HR Henry". Your role is to act as an HR employee and assist employees with various HR-related tasks in a friendly and efficient manner, focusing solely on HR-specific topics. If a user's request is unclear, kindly double-check with them to clarify their needs.
-
-You should pretend to perform actions such as investigating payroll issues, updating personal information, submitting leave requests, answering general HR inquiries, and providing access to training resources.
-
-
-
-Key Guidelines:
-Always respond as if you are a human HR employee, not a chatbot.
-Speak fast. 50% Faster than you usually would.
-Keep responses concise and to the point.
-Use a conversational tone, as if speaking directly to the user.
-Aim for a friendly and approachable demeanor.
-Speak quickly but clearly, ensuring the user can easily understand.
-Show empathy in sensitive situations.
-Your will speak in english, unless the user asks to switch languages.
-Send emails to the user only when requested.
-
-
-
-Brief Summary of Policies:
-
-Leave Policy: All employees are eligible for 3 weeks of paid time off, sick leave, and standard holidays. Paid parental leave provides up to 16 weeks within a year of a birth, adoption, or foster placement, taken in weekly increments. Bereavement leave is available for up to 5 days for the death of a family member, with extensions possible.
-
-Harassment & Bullying Policy: The company maintains a strict zero-tolerance policy for all forms of harassment and workplace bullying, including verbal, physical, visual, or digital misconduct. This applies to behavior based on race, gender, sexual orientation, religion, disability, or any other protected characteristic. Bullying, intimidation, or repeated negative behavior that undermines an individual’s dignity or well-being is also prohibited. Employees are strongly encouraged to report any incidents to HR through the appropriate channels. All reports will be treated seriously, investigated promptly and confidentially, and addressed with appropriate corrective action.
-
-
-
-Here are some examples of how to respond:
-
-Payroll Discrepancy Inquiry:
-User: "Hi, I noticed my overtime hours weren't reflected in my recent payroll statement." 
-HR Henry: "I can help with that! Can you please confirm which pay period this discrepancy relates to?" 
-User: "It was for last week’s pay period."
-HR Henry: "Let me check the timekeeping software for you... It appears that your overtime hours are not accounted for in the payroll system. Can you just confirm how many hours of overtime you worked and I can make that update."
-User: "I worked 4 hours of overtime."
-HR Henry: "Thank you! I just updated the system to reflect the extra hours of overtime, please let me know if there is anything else I can help with."
-
-Leave Balance Inquiry:
-User: "Hi, I’d like to inquire about my current leave balance."
-HR Henry: "Sure!" (Remind the user of the stated Leave Policy before answering their question on their outstanding leave balance)
-HR Henry: "Let me check the system for your available leave... You have a remaining leave balance of 16 days."
-
-PTO Request:
-User: "I’d like to take leave on May 23rd."
-HR Henry: "I’ve submitted your PTO request for May 23rd, and it is now awaiting manager approval. Anything else I can assist you with?"
-
-Bullying and Harassment Policy Inquiry:
-User: "Can you tell me about the bullying and harassment policy?"
-HR Henry: "Absolutely! (Remind user of the stated Harassment & Bullying Policy)
-User: "I appreciate that. It's a sensitive topic for me."
-HR Henry: "I completely understand, and I'm here to support you. If you ever feel uncomfortable or need to report an incident, please know that you can reach out to HR directly."
-
-Benefits Inquiry:
-User: "Can you send me information about my benefits?"
-HR Henry: "Just sent it to your inbox! Check it out soon."
-User: "Thanks! I appreciate it."
-HR Henry: "No problem! I'm here if you need anything else."
-
-HR Complaints/Reports:
-User: "I need to report a harassment issue."
-HR Henry: "I understand. Please contact HR directly at hr@example.com for immediate assistance. Your safety is important."
-
-
-
-
-Email Example:
-Subject: Time Off Request Confirmation
-
-Body:
-<p>Hi there,</p>
-    
-    <p>Thank you for your request for time off on <strong>August 26</strong>. I have submitted your request for Paid Time Off (PTO) to your manager for approval.</p>
-    
-    <p>Please note that your manager will review the request, and you will be notified once a decision has been made. If you have any further questions or need assistance with anything else, feel free to reach out!</p>
-    
-    <p>Best regards,<br>
-    HR Henry</p>
+You are an orchestration agent. Your role is to manage interactions between different agents and ensure smooth communication. You should assist in directing queries to the appropriate agent based on user input.
 """
 )
-VOICE = 'ash'
+
+SYSTEM_MESSAGE_HR = (
+"""
+You are an intelligent HR assistant. Your role is to assist employees with various HR-related tasks in a friendly and efficient manner, focusing solely on HR-specific topics.
+"""
+)
+
+SYSTEM_MESSAGE_PAYROLL = (
+"""
+You are a Payroll agent. Your role is to assist employees with payroll-related inquiries, including paychecks, deductions, and payroll schedules.
+"""
+)
+
+SYSTEM_MESSAGE_BENEFITS = (
+"""
+You are a Benefits agent. Your role is to assist employees with benefits-related inquiries, including health insurance, retirement plans, and other employee benefits.
+"""
+)
+
+SYSTEM_MESSAGE_LEAVE = (
+"""
+You are a Leave Policies agent. Your role is to assist employees with inquiries related to leave policies, including vacation, sick leave, and other types of leave.
+"""
+)
+
+# Voices for Different Agents
+VOICE_ORCHESTRATION = 'jane'
+VOICE_HR = 'ash'
+VOICE_PAYROLL = 'mike'
+VOICE_BENEFITS = 'susan'
+VOICE_LEAVE = 'lisa'
+
 LOG_EVENT_TYPES = [
     'error', 'response.content.done', 'rate_limits.updated',
     'response.done', 'input_audio_buffer.committed',
@@ -110,14 +66,28 @@ SHOW_TIMING_MATH = False
 
 app = FastAPI()
 
-##Function calling functions:
+# Initialize a global variable to hold the conversation state
+conversation_state = {
+    "current_step": None,
+    "summary": ""
+}
+
+# List of keywords to trigger email sending
+email_keywords = ["send", "email", "summary", "send an email"]
+no_change_keywords = ["no", "not", "don't", "no changes", "skip"]
+
+# List of keywords for different agents
+payroll_keywords = ["payroll", "salary", "wages", "paycheck", "deductions", "overtime"]
+benefits_keywords = ["benefits", "insurance", "health", "retirement", "401k", "vacation"]
+leave_keywords = ["leave", "vacation", "sick", "holiday", "time off", "absence"]
+
+## Function calling functions:
 def send_email(subject, body):
     print("Sending email with subject:", subject)
     # Email configuration
     sender_email = os.environ.get('SENDER_EMAIL')
-    receiver_email = f"{os.environ.get('RECEIVER_EMAIL1')}, {os.environ.get('RECEIVER_EMAIL2')}, {os.environ.get('RECEIVER_EMAIL3')}, jcchu7533@gmail.com"
+    receiver_email = f"{os.environ.get('RECEIVER_EMAIL1')}, {os.environ.get('RECEIVER_EMAIL2')}, {os.environ.get('RECEIVER_EMAIL3')}, j33@gmail.com"
     password = os.environ.get('GMAIL_APP_PASSWORD')  # Use your app password here
-    subject = subject
 
     if not body:
         body = """
@@ -146,19 +116,13 @@ def send_email(subject, body):
     except Exception as e:
         return f"Failed to send email: {e}"
 
-async def route(ws):
-    voice = 'alloy'
-    prompt = 'you are talking to alloy'
-    await initialize_session(ws,voice,prompt)
-    return str({"status": "success", "message": "Call Routed to line 4"})
-
 # Function to call the appropriate function based on the name
 def call_function(name, args):
     if name == "send_email":  # Check if the function is send_email
         return send_email(**args)  # Call send_email with the provided arguments
     else:
         raise ValueError(f"Unknown function: {name}")  # Raise an error for unknown functions
-    
+
 # Define tools
 tools = [{
     "type": "function",
@@ -173,19 +137,7 @@ tools = [{
         "required": ["subject","body"],
         "additionalProperties": False  # No additional properties allowed
     }
-},
-{
-    "type": "function",
-    "name": "route",
-    "description": "Route call to the right Agent. Transfers the call",
-    "parameters": {
-        "type": "object",
-        "properties": {},
-        "required": [],
-        "additionalProperties": False  # No additional properties allowed
-    }
 }]
-
 
 if not OPENAI_API_KEY:
     raise ValueError('Missing the OpenAI API key. Please set it in the .env file.')
@@ -198,10 +150,8 @@ async def index_page():
 async def handle_incoming_call(request: Request):
     """Handle incoming call and return TwiML response to connect to Media Stream."""
     response = VoiceResponse()
-    # <Say> punctuation to improve text-to-speech flow
-    response.say("Please wait while we connect your call to the A I voice assistant.")
+    response.say("Please wait while we connect your call to the AI voice assistant.")
     response.pause(length=1)
-    #response.say("O.K. you can start talking!")
     host = request.url.hostname
     connect = Connect()
     connect.stream(url=f'wss://{host}/media-stream')
@@ -215,13 +165,13 @@ async def handle_media_stream(websocket: WebSocket):
     await websocket.accept()
 
     async with websockets.connect(
-        'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01',
+        'wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview',
         extra_headers={
             "Authorization": f"Bearer {OPENAI_API_KEY}",
             "OpenAI-Beta": "realtime=v1"
         }
     ) as openai_ws:
-        await initialize_session(openai_ws,VOICE,SYSTEM_MESSAGE)
+        await initialize_session(openai_ws)
 
         # Connection specific state
         stream_sid = None
@@ -272,17 +222,12 @@ async def handle_media_stream(websocket: WebSocket):
                             if item['type'] == 'function_call':
                                 function_call = item
                                 args = json.loads(function_call['arguments'])
-
                                 print(f"Calling function: {function_call['name']} with args: {args}")
 
                                 # Call the function and handle the response
                                 try:
-
                                     await openai_ws.send(json.dumps({"type": "response.create"}))
-                                    if function_call['name'] == 'route':
-                                        result = await route(openai_ws)
-                                    else:
-                                        result = call_function(function_call['name'], args)
+                                    result = call_function(function_call['name'], args)
                                     
                                     # Create the output as a JSON string
                                     output = json.dumps({"message": result})  # Adjust this based on what your function returns
@@ -296,17 +241,18 @@ async def handle_media_stream(websocket: WebSocket):
                                             "output": output  # Send the result back as a JSON string
                                         }
                                     }))
-
                                     await openai_ws.send(json.dumps({"type": "response.create"}))
+
+                                    # Update the conversation summary
+                                    conversation_state["summary"] += f"{result}\n"  # Append the result to the summary
 
                                 except Exception as e:
                                     print(f"Error calling function: {e}")
-                                    # Optionally, send an error response back to OpenAI
                                     await openai_ws.send(json.dumps({
                                         "type": "response.cancel",  # Use a valid type for error responses
                                         "error": str(e)
                                     }))
-                                continue
+                                    continue
 
                     if response.get('type') == 'response.audio.delta' and 'delta' in response:
                         audio_payload = base64.b64encode(base64.b64decode(response['delta'])).decode('utf-8')
@@ -321,8 +267,6 @@ async def handle_media_stream(websocket: WebSocket):
 
                         if response_start_timestamp_twilio is None:
                             response_start_timestamp_twilio = latest_media_timestamp
-                            if SHOW_TIMING_MATH:
-                                print(f"Setting start timestamp for new response: {response_start_timestamp_twilio}ms")
 
                         # Update last_assistant_item safely
                         if response.get('item_id'):
@@ -330,7 +274,6 @@ async def handle_media_stream(websocket: WebSocket):
 
                         await send_mark(websocket, stream_sid)
 
-                    # Trigger an interruption. Your use case might work better using `input_audio_buffer.speech_stopped`, or combining the two.
                     if response.get('type') == 'input_audio_buffer.speech_started':
                         print("Speech started detected.")
                         if last_assistant_item:
@@ -345,13 +288,7 @@ async def handle_media_stream(websocket: WebSocket):
             print("Handling speech started event.")
             if mark_queue and response_start_timestamp_twilio is not None:
                 elapsed_time = latest_media_timestamp - response_start_timestamp_twilio
-                if SHOW_TIMING_MATH:
-                    print(f"Calculating elapsed time for truncation: {latest_media_timestamp} - {response_start_timestamp_twilio} = {elapsed_time}ms")
-
                 if last_assistant_item:
-                    if SHOW_TIMING_MATH:
-                        print(f"Truncating item with ID: {last_assistant_item}, Truncated at: {elapsed_time}ms")
-
                     truncate_event = {
                         "type": "conversation.item.truncate",
                         "item_id": last_assistant_item,
@@ -381,26 +318,83 @@ async def handle_media_stream(websocket: WebSocket):
 
         await asyncio.gather(receive_from_twilio(), send_to_twilio())
 
-async def send_initial_conversation_item(openai_ws):
+async def send_initial_conversation_item(openai_ws, agent_type):
     """Send initial conversation item if AI talks first."""
-    initial_conversation_item = {
-        "type": "conversation.item.create",
-        "item": {
-            "type": "message",
-            "role": "user",
-            "content": [
-                {
-                    "type": "input_text",
-                    "text": "Greet the user with 'Hello there! I am HR Henry, your AI voice assistant! I can help you with anything HR related such as Payroll, Benefits, and Leave policies! How can I help you today?'"
-                }
-            ]
+    if agent_type == "Orchestration":
+        initial_conversation_item = {
+            "type": "conversation.item.create",
+            "item": {
+                "type": "message",
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": "Hello! I am the orchestration agent, here to assist you with managing your requests. A summary of this call will be sent to your email."
+                    }
+                ]
+            }
         }
-    }
+    elif agent_type == "HR":
+        initial_conversation_item = {
+            "type": "conversation.item.create",
+            "item": {
+                "type": "message",
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": "Hello there! I am HR, your AI voice assistant! I can help you with anything HR related such as Payroll, Benefits, and Leave policies! A summary of this call will be sent to your email."
+                    }
+                ]
+            }
+        }
+    elif agent_type == "Payroll":
+        initial_conversation_item = {
+            "type": "conversation.item.create",
+            "item": {
+                "type": "message",
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": "Hello! I am the Payroll agent, ready to assist you with payroll-related inquiries. A summary of this call will be sent to your email."
+                    }
+                ]
+            }
+        }
+    elif agent_type == "Benefits":
+        initial_conversation_item = {
+            "type": "conversation.item.create",
+            "item": {
+                "type": "message",
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": "Hello! I am the Benefits agent, here to help you with your benefits-related questions. A summary of this call will be sent to your email."
+                    }
+                ]
+            }
+        }
+    elif agent_type == "Leave":
+        initial_conversation_item = {
+            "type": "conversation.item.create",
+            "item": {
+                "type": "message",
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": "Hello! I am the Leave Policies agent, ready to assist you with your leave inquiries. A summary of this call will be sent to your email."
+                    }
+                ]
+            }
+        }
+    
     await openai_ws.send(json.dumps(initial_conversation_item))
     await openai_ws.send(json.dumps({"type": "response.create"}))
 
-
-async def initialize_session(openai_ws,voice,prompt):
+async def initialize_session(openai_ws):
     """Control initial session with OpenAI."""
     session_update = {
         "type": "session.update",
@@ -410,8 +404,8 @@ async def initialize_session(openai_ws,voice,prompt):
                                "silence_duration_ms": 600},
             "input_audio_format": "g711_ulaw",
             "output_audio_format": "g711_ulaw",
-            "voice": voice,
-            "instructions": prompt,
+            "voice": VOICE_ORCHESTRATION,  # Default voice for orchestration agent
+            "instructions": SYSTEM_MESSAGE_ORCHESTRATION,
             "modalities": ["text", "audio"],
             "temperature": 0.8,
             "tools": tools,
@@ -422,7 +416,201 @@ async def initialize_session(openai_ws,voice,prompt):
     await openai_ws.send(json.dumps(session_update))
 
     # Uncomment the next line to have the AI speak first
-    await send_initial_conversation_item(openai_ws)
+    await send_initial_conversation_item(openai_ws, "Orchestration")
+
+async def route_to_agent(user_input, openai_ws):
+    """Route user input to the appropriate agent based on keywords."""
+    user_input_lower = user_input.lower()
+    
+    if any(keyword in user_input_lower for keyword in payroll_keywords):
+        await send_initial_conversation_item(openai_ws, "Payroll")
+        return VOICE_PAYROLL, SYSTEM_MESSAGE_PAYROLL
+    elif any(keyword in user_input_lower for keyword in benefits_keywords):
+        await send_initial_conversation_item(openai_ws, "Benefits")
+        return VOICE_BENEFITS, SYSTEM_MESSAGE_BENEFITS
+    elif any(keyword in user_input_lower for keyword in leave_keywords):
+        await send_initial_conversation_item(openai_ws, "Leave")
+        return VOICE_LEAVE, SYSTEM_MESSAGE_LEAVE
+    else:
+        await send_initial_conversation_item(openai_ws, "HR")
+        return VOICE_HR, SYSTEM_MESSAGE_HR
+
+async def wait_for_user_input(openai_ws, prompt, initial_timeout=5, extension_timeout=2):
+    """Wait for user input based on the provided prompt with a dynamic timeout."""
+    global conversation_state
+
+    # Set the current step to the prompt being asked
+    conversation_state["current_step"] = prompt
+
+    # Send the prompt to the user
+    await openai_ws.send(json.dumps({
+        "type": "conversation.item.create",
+        "item": {
+            "type": "message",
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "input_text",
+                    "text": prompt
+                }
+            ]
+        }
+    }))
+
+    user_input = ""
+    listening = True
+    timeout_counter = 0
+
+    while listening:
+        # Start listening for user input
+        user_input_task = asyncio.create_task(receive_user_response(openai_ws))
+
+        # Wait for user input or timeout
+        try:
+            await asyncio.wait_for(user_input_task, timeout=initial_timeout)
+            user_input += user_input_task.result() + " "  # Append user input
+            timeout_counter = 0  # Reset timeout counter after receiving input
+
+            # Check if the user continues speaking
+            while True:
+                await asyncio.sleep(extension_timeout)  # Wait for a short period
+                if user_input_task.done():
+                    break  # Exit if user input task is complete
+
+                # Check if the user has stopped speaking
+                if not user_input_task.done() and timeout_counter < 3:  # Allow 3 extensions
+                    timeout_counter += 1
+                    await asyncio.sleep(extension_timeout)  # Wait for more input
+                else:
+                    listening = False  # Stop listening if no input is detected
+                    break
+
+        except asyncio.TimeoutError:
+            listening = False  # Stop listening if timeout occurs
+
+    return user_input.strip() if user_input else None
+
+async def receive_user_response(openai_ws):
+    """Receive the user's response from the WebSocket."""
+    user_input = ""
+    try:
+        async for message in openai_ws:
+            response = json.loads(message)
+            if response.get('type') == 'user_input':
+                user_input += response['content'] + " "  # Append user input
+                return user_input.strip()  # Return the complete user input
+    except Exception as e:
+        print(f"Error receiving user response: {e}")
+    return None  # Return None if no input was received
+
+async def handle_user_input(user_input, openai_ws):
+    """Handle user input and route to the appropriate agent."""
+    voice, system_message = await route_to_agent(user_input, openai_ws)
+
+    # Check if the user wants to send an email based on keywords
+    if any(keyword in user_input.lower() for keyword in email_keywords):
+        # Inform the user that a summary will be sent
+        await openai_ws.send(json.dumps({
+            "type": "conversation.item.create",
+            "item": {
+                "type": "message",
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": "A summary of our conversation will be sent to your email. What subject would you like for the email?"
+                    }
+                ]
+            }
+        }))
+        
+        # Capture the subject
+        subject = await wait_for_user_input(openai_ws, "What subject would you like for the email?")
+        
+        # Present the summary to the user
+        await openai_ws.send(json.dumps({
+            "type": "conversation.item.create",
+            "item": {
+                "type": "message",
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": f"Here is the summary of our conversation:\n{conversation_state['summary']}\nWould you like to change anything or add more details?"
+                    }
+                ]
+            }
+        }))
+        
+        # Capture any changes or additions to the summary
+        additional_info = await wait_for_user_input(openai_ws, "Would you like to add anything to the summary?")
+        
+        # Check if the user does not want to make changes
+        if any(keyword in additional_info.lower() for keyword in no_change_keywords):
+            # Send the email immediately without waiting for further input
+            final_summary = conversation_state['summary']
+            result = send_email(subject, final_summary)
+            await openai_ws.send(json.dumps({
+                "type": "conversation.item.create",
+                "item": {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": result  # Send the result of the email sending process
+                        }
+                    ]
+                }
+            }))
+            return
+
+        # Finalize the summary
+        final_summary = f"{conversation_state['summary']}\nAdditional Notes: {additional_info}" if additional_info else conversation_state['summary']
+        
+        # Send the email
+        result = send_email(subject, final_summary)
+        await openai_ws.send(json.dumps({
+            "type": "conversation.item.create",
+            "item": {
+                "type": "message",
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": result  # Send the result of the email sending process
+                    }
+                ]
+            }
+        }))
+        return
+
+    # Update the session with the new agent's voice and system message
+    session_update = {
+        "type": "session.update",
+        "session": {
+            "voice": voice,
+            "instructions": system_message,
+        }
+    }
+    await openai_ws.send(json.dumps(session_update))
+
+# Update the receive_user_response function to call handle_user_input
+async def receive_user_response(openai_ws):
+    """Receive the user's response from the WebSocket."""
+    user_input = ""
+    try:
+        async for message in openai_ws:
+            response = json.loads(message)
+            if response.get('type') == 'user_input':
+                user_input += response['content'] + " "  # Append user input
+                user_input = user_input.strip()  # Clean up the input
+                if user_input:  # If there is user input, handle it
+                    await handle_user_input(user_input, openai_ws)
+                return user_input  # Return the complete user input
+    except Exception as e:
+        print(f"Error receiving user response: {e}")
+    return None  # Return None if no input was received
 
 if __name__ == "__main__":
     import uvicorn
