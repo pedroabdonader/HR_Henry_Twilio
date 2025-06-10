@@ -71,17 +71,16 @@ def send_email(subject, body):
 
 def route_call(department):
     """Route the call to the appropriate department."""
-    response = VoiceResponse()
     if department.lower() == "hr":
-        dial = Dial(caller_id='+18665703021')
-        dial.number('+18665703759')
-        response.append(dial)
+        response = VoiceResponse()
+        response.redirect('/hr/incoming-call', method = "POST")
+        return 'call routed to line 7'  # Return the HR app
     elif department.lower() == "copay":
-        response.say("Connecting you to the copay card department.")
-        response.dial("866-570-3049")  # Replace with actual support department number
+        response = VoiceResponse()
+        response.redirect('/copay/incoming-call', method = "POST")
+        return 'call routed to line 7'
     else:
-        response.say("Sorry, I didn't understand that. Please try again.")
-    return str(response)
+        raise ValueError("Invalid department specified. Use 'hr' or 'copay'.")
 
 
 # Function to call the appropriate function based on the name
@@ -116,7 +115,7 @@ tools = [{
             "department": {
                 "type": "string",
                 "enum": ["hr", "copay"],
-                "description": "The department to route the call to. Options are 'hr' or 'copay'. HR for anything related to human resources, and Copay for anything related to copay cards."
+                "description": "The department to route the call to. Options are 'hr' or 'copay'. hr for anything related to human resources, and Copay for anything related to copay cards."
             }
         },
         "required": ["department"],
@@ -135,8 +134,12 @@ async def index_page():
 async def handle_incoming_call(request: Request):
     """Handle incoming call and return TwiML response to connect to Media Stream."""
     response = VoiceResponse()
-    response.say("Thank you for calling. Please hold while we connect you to a representative.")
-    response.redirect("/hr/incoming-call", method="POST")  # Redirect to HR app for handling
+    response.say("Please wait while we connect your call to the AI voice assistant.")
+    response.pause(length=1)
+    host = request.url.hostname
+    connect = Connect()
+    connect.stream(url=f'wss://{host}/media-stream')
+    response.append(connect)
     return HTMLResponse(content=str(response), media_type="application/xml")
 
 @app.websocket("/media-stream")
