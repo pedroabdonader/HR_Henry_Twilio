@@ -9,7 +9,7 @@ from email.mime.multipart import MIMEMultipart
 from fastapi import FastAPI, WebSocket, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.websockets import WebSocketDisconnect
-from twilio.twiml.voice_response import VoiceResponse, Connect, Say, Stream
+from twilio.twiml.voice_response import VoiceResponse, Connect, Say, Stream, Dial
 from dotenv import load_dotenv
 from hr import app as henry_app  # Import the FastAPI app from hr
 from copay import app as copay_app   # Import the FastAPI app from echo
@@ -68,6 +68,21 @@ def send_email(subject, body):
     except Exception as e:
         return f"Failed to send email: {e}"
 
+
+def route_call(department):
+    """Route the call to the appropriate department."""
+    response = VoiceResponse()
+    if department.lower() == "hr":
+        response.say("Connecting you to the hr department.")
+        response.dial("866-570-3759")  # Replace with actual sales department number
+    elif department.lower() == "copay":
+        response.say("Connecting you to the copay card department.")
+        response.dial("866-570-3049")  # Replace with actual support department number
+    else:
+        response.say("Sorry, I didn't understand that. Please try again.")
+    return str(response)
+
+
 # Function to call the appropriate function based on the name
 def call_function(name, args):
     if name == "send_email":  # Check if the function is send_email
@@ -87,6 +102,23 @@ tools = [{
             "body": {"type": "string", "description": "The body of the email in HTML format with a greeting, main message, closing, and signature in different sections."}
         },
         "required": ["subject", "body"],
+        "additionalProperties": False  # No additional properties allowed
+    }
+},
+{
+    "type": "function",
+    "name": "route_call",
+    "description": "Route the call to the appropriate department based on the user's request.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "department": {
+                "type": "string",
+                "enum": ["hr", "copay"],
+                "description": "The department to route the call to. Options are 'hr' or 'copay'. HR for anything related to human resources, and Copay for anything related to copay cards."
+            }
+        },
+        "required": ["department"],
         "additionalProperties": False  # No additional properties allowed
     }
 }]
