@@ -13,7 +13,7 @@ from twilio.twiml.voice_response import VoiceResponse, Connect, Say, Stream
 from dotenv import load_dotenv
 import henry
 import echo
- 
+
 load_dotenv()
 
 # Configuration
@@ -74,13 +74,13 @@ def send_email(subject, body):
     
 def route_call(department):
     """Route the call to the appropriate department."""
+    response = VoiceResponse()
     if department.lower() == "hr":
         #redirect to henry
-        #redirect.henry.handle_incoming_call()
-        henry.handle_incoming_call()
+        response.redirect(f'henry')
         return "Connecting you to the sales department."
     elif department == "echo":
-        echo.handle_incoming_call()
+        response.redirect(f'echo')
         return "Connecting you to the support department."
     else:
         return "Sorry, I didn't understand your request. Please try again."
