@@ -136,7 +136,7 @@ async def handle_incoming_call(request: Request):
     """Handle incoming call and return TwiML response to connect to Media Stream."""
     response = VoiceResponse()
     response.say("Thank you for calling. Please hold while we connect you to a representative.")
-    response.dial("+18665703759")
+    response.redirect("/hr/incoming-call", method="POST")  # Redirect to HR app for handling
     return HTMLResponse(content=str(response), media_type="application/xml")
 
 @app.websocket("/media-stream")
