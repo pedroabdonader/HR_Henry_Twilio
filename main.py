@@ -12,7 +12,7 @@ from fastapi.websockets import WebSocketDisconnect
 from twilio.twiml.voice_response import VoiceResponse, Connect, Say, Stream
 from dotenv import load_dotenv
 from hr import app as henry_app  # Import the FastAPI app from hr
-from echo import app as echo_app   # Import the FastAPI app from echo
+from copay import app as copay_app   # Import the FastAPI app from echo
 
 load_dotenv()
 
@@ -31,7 +31,7 @@ app = FastAPI()
 
 # Include the routes from henry and echo
 app.mount("/hr", henry_app)  # Mount henry's app under /hr
-app.mount("/echo", echo_app)   # Mount echo's app under /echo
+app.mount("/copay", copay_app)   # Mount echo's app under /echo
 
 ## Function calling functions
 def send_email(subject, body):
@@ -68,32 +68,10 @@ def send_email(subject, body):
     except Exception as e:
         return f"Failed to send email: {e}"
 
-def route_call(department):
-    """Route the call to the appropriate department or phone number."""
-    response = VoiceResponse()
-    
-    # Define phone numbers for each department
-    phone_numbers = {
-        "hr": "+18665703049",  # Replace with the actual HR phone number
-        "echo": "+10987654321"  # Replace with the actual Echo support phone number
-    }
-    
-    # Check if the department exists in the phone_numbers dictionary
-    if department.lower() in phone_numbers:
-        response.say(f"Connecting you to {department}.")
-        response.dial(phone_numbers[department.lower()])  # Dial the phone number
-    else:
-        response.say(f"Sorry, I cannot route your call to {department}. Please try again.")
-    
-    return response
-
-
 # Function to call the appropriate function based on the name
 def call_function(name, args):
     if name == "send_email":  # Check if the function is send_email
         return send_email(**args)  # Call send_email with the provided arguments
-    elif name == "route_call":  # Check if the function is route_call
-        return route_call(**args)
     else:
         raise ValueError(f"Unknown function: {name}")  # Raise an error for unknown functions
 
@@ -109,22 +87,6 @@ tools = [{
             "body": {"type": "string", "description": "The body of the email in HTML format with a greeting, main message, closing, and signature in different sections."}
         },
         "required": ["subject", "body"],
-        "additionalProperties": False  # No additional properties allowed
-    }
-},
-{
-    "type": "function",
-    "name": "route_call",
-    "description": "Route the call to the appropriate department based on the user's request.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "department": {
-                "type": "string",
-                "description": "The department to route the call to. Only options are 'hr' or 'echo'."
-            }
-        },
-        "required": ["department"],
         "additionalProperties": False  # No additional properties allowed
     }
 }]
@@ -217,11 +179,6 @@ async def handle_media_stream(websocket: WebSocket):
                                 # Call the function and handle the response
                                 try:
                                     await openai_ws.send(json.dumps({"type": "response.create"}))
-
-                                    if function_call['name'] == 'route_call':
-                                        openai_ws.close()  # Close the OpenAI WebSocket if routing a call
-                                        twilio_response = route_call(**args)
-                                        # Send the Twilio response back to the client
                                     result = call_function(function_call['name'], args)
                                     
                                     # Create the output as a JSON string
