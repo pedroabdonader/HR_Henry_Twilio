@@ -36,7 +36,7 @@ SHOW_TIMING_MATH = False
 app = FastAPI()
 
 # Include the routes from henry and echo
-app.mount("/henry", henry_app)  # Mount henry's app under /henry
+app.mount("/hr", henry_app)  # Mount henry's app under /henry
 app.mount("/echo", echo_app)      # Mount echo's app under /echo
 
 ##Function calling functions:
