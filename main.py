@@ -19,13 +19,7 @@ load_dotenv()
 # Configuration
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 PORT = int(os.getenv('PORT', 5050))
-SYSTEM_MESSAGE = (
-"""
-System Message:
-You are a secretary AI voice assistant for company ABC. Your goal is to redirect the caller to the appropriate department based on their request.
-"""
-)
-VOICE = 'alloy'
+
 LOG_EVENT_TYPES = [
     'error', 'response.content.done', 'rate_limits.updated',
     'response.done', 'input_audio_buffer.committed', 'input_audio_buffer.speech_stopped',
@@ -75,22 +69,31 @@ def send_email(subject, body):
         return f"Failed to send email: {e}"
 
 def route_call(department):
-    """Route the call to the appropriate department."""
+    """Route the call to the appropriate department or phone number."""
     response = VoiceResponse()
-    response.say("Routing Function runned")
-    try:
-        # Adjust the redirect to point to the correct mounted paths
-        response.redirect(f'/{department.lower()}/incoming-call')  # Assuming you have an incoming-call endpoint in each app
-    except ValueError as e:
-        response.say(f"Sorry, I cannot route your call to {department}. Please try again. Error: {str(e)}")
-        return str(e)
+    
+    # Define phone numbers for each department
+    phone_numbers = {
+        "hr": "+12345678901",  # Replace with the actual HR phone number
+        "echo": "+10987654321"  # Replace with the actual Echo support phone number
+    }
+    
+    # Check if the department exists in the phone_numbers dictionary
+    if department.lower() in phone_numbers:
+        response.say(f"Connecting you to {department}.")
+        response.dial(phone_numbers[department.lower()])  # Dial the phone number
+    else:
+        response.say(f"Sorry, I cannot route your call to {department}. Please try again.")
+    
+    return response
+
 
 # Function to call the appropriate function based on the name
 def call_function(name, args):
     if name == "send_email":  # Check if the function is send_email
         return send_email(**args)  # Call send_email with the provided arguments
     elif name == "route_call":  # Check if the function is route_call
-        return route_call(args['department'])
+        return route_call(**args)
     else:
         raise ValueError(f"Unknown function: {name}")  # Raise an error for unknown functions
 
@@ -330,6 +333,13 @@ async def send_initial_conversation_item(openai_ws):
     await openai_ws.send(json.dumps({"type": "response.create"}))
 
 async def initialize_session(openai_ws):
+    SYSTEM_MESSAGE = (
+    """
+    System Message:
+    You are a secretary AI voice assistant for company ABC. Your goal is to redirect the caller to the appropriate department based on their request.
+    """
+    )
+    VOICE = 'alloy'
     """Control initial session with OpenAI."""
     session_update = {
         "type": "session.update",
