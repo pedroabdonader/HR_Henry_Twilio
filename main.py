@@ -77,10 +77,10 @@ def route_call(department):
     response = VoiceResponse()
     if department.lower() == "hr":
         #redirect to henry
-        response.redirect(f'henry')
+        response.redirect('/henry')
         return "Connecting you to the sales department."
     elif department == "echo":
-        response.redirect(f'echo')
+        response.redirect('/echo')
         return "Connecting you to the support department."
     else:
         return "Sorry, I didn't understand your request. Please try again."
