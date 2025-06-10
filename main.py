@@ -69,20 +69,6 @@ def send_email(subject, body):
         return f"Failed to send email: {e}"
 
 
-def route_call(department):
-    """Route the call to the appropriate department."""
-    if department.lower() == "hr":
-        response = VoiceResponse()
-        response.redirect('/hr/incoming-call', method = "POST")
-        return 'call routed to line 7'  # Return the HR app
-    elif department.lower() == "copay":
-        response = VoiceResponse()
-        response.redirect('/copay/incoming-call', method = "POST")
-        return 'call routed to line 7'
-    else:
-        raise ValueError("Invalid department specified. Use 'hr' or 'copay'.")
-
-
 # Function to call the appropriate function based on the name
 def call_function(name, args):
     if name == "send_email":  # Check if the function is send_email
@@ -107,18 +93,23 @@ tools = [{
 },
 {
     "type": "function",
-    "name": "route_call",
-    "description": "Route the call to the appropriate department based on the user's request.",
+    "name": "route_to_hr",
+    "description": "Route the call to HR",
     "parameters": {
         "type": "object",
-        "properties": {
-            "department": {
-                "type": "string",
-                "enum": ["hr", "copay"],
-                "description": "The department to route the call to. Options are 'hr' or 'copay'. hr for anything related to human resources, and Copay for anything related to copay cards."
-            }
-        },
-        "required": ["department"],
+        "properties": {},
+        "required": [],
+        "additionalProperties": False  # No additional properties allowed
+    }
+},
+{
+    "type": "function",
+    "name": "route_to_copay",
+    "description": "Route the call to copay card department.",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": [],
         "additionalProperties": False  # No additional properties allowed
     }
 }]
@@ -211,6 +202,14 @@ async def handle_media_stream(websocket: WebSocket):
                                 # Call the function and handle the response
                                 try:
                                     await openai_ws.send(json.dumps({"type": "response.create"}))
+
+                                    if function_call['name'] == "route_to_hr":
+                                        response = VoiceResponse()
+                                        response.redirect('/hr/incoming-call', method="POST")
+                                    if function_call['name'] == "route_to_copay":
+                                        response = VoiceResponse()
+                                        response.redirect('/copay/incoming-call', method="POST")
+
                                     result = call_function(function_call['name'], args)
                                     
                                     # Create the output as a JSON string
@@ -306,8 +305,7 @@ async def handle_media_stream(websocket: WebSocket):
                 await connection.send_json(mark_event)
                 mark_queue.append('responsePart')
 
-        response = VoiceResponse()
-        response.redirect('/hr/incoming-call', method="POST")
+
 
         await asyncio.gather(receive_from_twilio(), send_to_twilio())
 
