@@ -79,7 +79,7 @@ def route_call(department):
     """Route the call to the appropriate department."""
     response = VoiceResponse()
     try:
-        response.redirect(f'/{department}/{department}')  # This will now work with the mounted apps
+        response.redirect(f'/{department.lower()}/{department.lower()}')  # This will now work with the mounted apps
     except ValueError as e:
         response.say(f"Sorry, I cannot route your call to {department}. Please try again. Error: {str(e)}")
         return str(e)
