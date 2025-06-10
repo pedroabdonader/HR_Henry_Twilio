@@ -74,7 +74,7 @@ def route_call(department):
     
     # Define phone numbers for each department
     phone_numbers = {
-        "hr": "+12345678901",  # Replace with the actual HR phone number
+        "hr": "+18665703049",  # Replace with the actual HR phone number
         "echo": "+10987654321"  # Replace with the actual Echo support phone number
     }
     
