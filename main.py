@@ -75,16 +75,11 @@ def send_email(subject, body):
 def route_call(department):
     """Route the call to the appropriate department."""
     response = VoiceResponse()
-    if department.lower() == "hr":
-        #redirect to henry
-        response.redirect('/henry')
-        return "Connecting you to the sales department."
-    elif department == "echo":
-        response.redirect('/echo')
-        return "Connecting you to the support department."
-    else:
-        return "Sorry, I didn't understand your request. Please try again."
-
+    try:
+        response.redirect(f'/{department}')
+    except ValueError as e:
+        response.say(f"Sorry, I cannot route your call to {department}. Please try again. Error: {str(e)}")
+        return str(e)
 
 # Function to call the appropriate function based on the name
 def call_function(name, args):
