@@ -85,6 +85,8 @@ def route_call(department):
 def call_function(name, args):
     if name == "send_email":  # Check if the function is send_email
         return send_email(**args)  # Call send_email with the provided arguments
+    elif name == "route_call":  # Check if the function is route_call
+        return route_call(**args)
     else:
         raise ValueError(f"Unknown function: {name}")  # Raise an error for unknown functions
 
