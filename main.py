@@ -13,7 +13,7 @@ from twilio.twiml.voice_response import VoiceResponse, Connect, Say, Stream, Dia
 from dotenv import load_dotenv
 from hr import app as henry_app  # Import the FastAPI app from hr
 from copay import app as copay_app   # Import the FastAPI app from echo
-
+ 
 load_dotenv()
  
 # Configuration
@@ -211,10 +211,6 @@ async def handle_media_stream(websocket: WebSocket):
                                 # Call the function and handle the response
                                 try:
                                     await openai_ws.send(json.dumps({"type": "response.create"}))
-
-                                    if function_call['name'] == "route_call":
-                                        websocket.close()
-                                        route_call(args['department'])
                                     result = call_function(function_call['name'], args)
                                     
                                     # Create the output as a JSON string
