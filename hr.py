@@ -107,7 +107,7 @@ async def handle_incoming_call(request: Request):
     #response.say("O.K. you can start talking!")
     host = request.url.hostname
     connect = Connect()
-    connect.stream(url=f'wss://{host}/media-stream')
+    connect.stream(url=f'wss://{host}/hr/media-stream')
     response.append(connect)
     return HTMLResponse(content=str(response), media_type="application/xml")
 
