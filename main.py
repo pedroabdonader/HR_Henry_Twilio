@@ -3,11 +3,15 @@ from fastapi.responses import Response
 from twilio.twiml.voice_response import VoiceResponse
 from hr import app as hr_app
 from copay import app as copay_app
+import os
+
 
 app = FastAPI(__name__)
 
 app.mount('/hr', hr_app)
 app.mount('/copay', copay_app)
+
+PORT = int(os.getenv('PORT', 5050))
 
 
 @app.post('/incoming-call')
