@@ -204,9 +204,11 @@ async def handle_media_stream(websocket: WebSocket):
                                     await openai_ws.send(json.dumps({"type": "response.create"}))
 
                                     if function_call['name'] == "route_to_hr":
+                                        openai_ws.close()
                                         response = VoiceResponse()
                                         response.redirect('/hr/incoming-call', method="POST")
                                     if function_call['name'] == "route_to_copay":
+                                        openai_ws.close()
                                         response = VoiceResponse()
                                         response.redirect('/copay/incoming-call', method="POST")
 
