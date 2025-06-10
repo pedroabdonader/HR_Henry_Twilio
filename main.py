@@ -217,6 +217,11 @@ async def handle_media_stream(websocket: WebSocket):
                                 # Call the function and handle the response
                                 try:
                                     await openai_ws.send(json.dumps({"type": "response.create"}))
+
+                                    if function_call['name'] == 'route_call':
+                                        openai_ws.close()  # Close the OpenAI WebSocket if routing a call
+                                        twilio_response = route_call(**args)
+                                        # Send the Twilio response back to the client
                                     result = call_function(function_call['name'], args)
                                     
                                     # Create the output as a JSON string
