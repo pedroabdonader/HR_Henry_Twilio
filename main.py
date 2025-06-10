@@ -67,19 +67,25 @@ def send_email(subject, body):
         return str({"status": "success", "message": "Please allow some time for the email to arrive"})
     except Exception as e:
         return f"Failed to send email: {e}"
-    
-    
+
 def route_call(department):
-    """Route the call to the appropriate department."""
     """Route the call to the appropriate department or phone number."""
     response = VoiceResponse()
-    response.say("Routing Function runned")
-    try:
-        # Adjust the redirect to point to the correct mounted paths
-        response.redirect(f'/{department.lower()}/incoming-call')  # Assuming you have an incoming-call endpoint in each app
-    except ValueError as e:
-        response.say(f"Sorry, I cannot route your call to {department}. Please try again. Error: {str(e)}")
-        return str(e)
+    
+    # Define phone numbers for each department
+    phone_numbers = {
+        "hr": "+18665703049",  # Replace with the actual HR phone number
+        "echo": "+10987654321"  # Replace with the actual Echo support phone number
+    }
+    
+    # Check if the department exists in the phone_numbers dictionary
+    if department.lower() in phone_numbers:
+        response.say(f"Connecting you to {department}.")
+        response.dial(phone_numbers[department.lower()])  # Dial the phone number
+    else:
+        response.say(f"Sorry, I cannot route your call to {department}. Please try again.")
+    
+    return response
 
 
 # Function to call the appropriate function based on the name
