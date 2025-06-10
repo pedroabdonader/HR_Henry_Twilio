@@ -11,7 +11,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.websockets import WebSocketDisconnect
 from twilio.twiml.voice_response import VoiceResponse, Connect, Say, Stream
 from dotenv import load_dotenv
-from henry import app as henry_app  # Import the FastAPI app from henry
+from hr import app as henry_app  # Import the FastAPI app from henry
 from echo import app as echo_app      # Import the FastAPI app from echo
 
 load_dotenv()
@@ -79,7 +79,7 @@ def route_call(department):
     """Route the call to the appropriate department."""
     response = VoiceResponse()
     try:
-        response.redirect(f'/{department}')  # This will now work with the mounted apps
+        response.redirect(f'/{department}/{department}')  # This will now work with the mounted apps
     except ValueError as e:
         response.say(f"Sorry, I cannot route your call to {department}. Please try again. Error: {str(e)}")
         return str(e)
