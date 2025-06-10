@@ -290,7 +290,7 @@ async def send_initial_conversation_item(openai_ws):
             "content": [
                 {
                     "type": "input_text",
-                    "text": "Greet the user with 'Hello there! I am HR Henry, your AI voice assistant! I can help you with anything HR related such as Payroll, Benefits, and Leave policies! How can I help you today?'"
+                    "text": "Greet the user with 'Hello there! I am here to help you to get your copay card, medication refill, financial assistant or just general medical questions. How can I help you today?'"
                 }
             ]
         }
