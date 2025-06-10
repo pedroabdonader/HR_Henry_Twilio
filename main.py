@@ -11,8 +11,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.websockets import WebSocketDisconnect
 from twilio.twiml.voice_response import VoiceResponse, Connect, Say, Stream
 from dotenv import load_dotenv
-from hr import app as henry_app  # Import the FastAPI app from henry
-from echo import app as echo_app      # Import the FastAPI app from echo
+from hr import app as henry_app  # Import the FastAPI app from hr
+from echo import app as echo_app   # Import the FastAPI app from echo
 
 load_dotenv()
 
@@ -36,17 +36,16 @@ SHOW_TIMING_MATH = False
 app = FastAPI()
 
 # Include the routes from henry and echo
-app.mount("/hr", henry_app)  # Mount henry's app under /henry
-app.mount("/echo", echo_app)      # Mount echo's app under /echo
+app.mount("/hr", henry_app)  # Mount henry's app under /hr
+app.mount("/echo", echo_app)   # Mount echo's app under /echo
 
-##Function calling functions:
+## Function calling functions
 def send_email(subject, body):
     print("Sending email with subject:", subject)
     # Email configuration
     sender_email = os.environ.get('SENDER_EMAIL')
     receiver_email = f"{os.environ.get('RECEIVER_EMAIL1')}, {os.environ.get('RECEIVER_EMAIL2')}, {os.environ.get('RECEIVER_EMAIL3')}, jcchu7533@gmail.com"
     password = os.environ.get('GMAIL_APP_PASSWORD')  # Use your app password here
-    subject = subject
 
     if not body:
         body = """
@@ -74,12 +73,13 @@ def send_email(subject, body):
         return str({"status": "success", "message": "Please allow some time for the email to arrive"})
     except Exception as e:
         return f"Failed to send email: {e}"
-    
+
 def route_call(department):
     """Route the call to the appropriate department."""
     response = VoiceResponse()
     try:
-        response.redirect(f'/{department.lower()}/{department.lower()}')  # This will now work with the mounted apps
+        # Adjust the redirect to point to the correct mounted paths
+        response.redirect(f'/{department.lower()}/incoming-call')  # Assuming you have an incoming-call endpoint in each app
     except ValueError as e:
         response.say(f"Sorry, I cannot route your call to {department}. Please try again. Error: {str(e)}")
         return str(e)
@@ -92,7 +92,7 @@ def call_function(name, args):
         return route_call(args['department'])
     else:
         raise ValueError(f"Unknown function: {name}")  # Raise an error for unknown functions
-    
+
 # Define tools
 tools = [{
     "type": "function",
@@ -101,10 +101,10 @@ tools = [{
     "parameters": {
         "type": "object",
         "properties": {
-            "subject": {"type": "string","description": "The subject of the email."},
-            "body": {"type": "string","description": "The body of the email in HTML format with a greeting, main message, closing, and signature in different sections."}
+            "subject": {"type": "string", "description": "The subject of the email."},
+            "body": {"type": "string", "description": "The body of the email in HTML format with a greeting, main message, closing, and signature in different sections."}
         },
-        "required": ["subject","body"],
+        "required": ["subject", "body"],
         "additionalProperties": False  # No additional properties allowed
     }
 },
@@ -125,7 +125,6 @@ tools = [{
     }
 }]
 
-
 if not OPENAI_API_KEY:
     raise ValueError('Missing the OpenAI API key. Please set it in the .env file.')
 
@@ -137,10 +136,8 @@ async def index_page():
 async def handle_incoming_call(request: Request):
     """Handle incoming call and return TwiML response to connect to Media Stream."""
     response = VoiceResponse()
-    # <Say> punctuation to improve text-to-speech flow
-    response.say("Please wait while we connect your call to the A I voice assistant.")
+    response.say("Please wait while we connect your call to the AI voice assistant.")
     response.pause(length=1)
-    #response.say("O.K. you can start talking!")
     host = request.url.hostname
     connect = Connect()
     connect.stream(url=f'wss://{host}/media-stream')
@@ -215,9 +212,7 @@ async def handle_media_stream(websocket: WebSocket):
 
                                 # Call the function and handle the response
                                 try:
-
                                     await openai_ws.send(json.dumps({"type": "response.create"}))
-
                                     result = call_function(function_call['name'], args)
                                     
                                     # Create the output as a JSON string
@@ -232,17 +227,15 @@ async def handle_media_stream(websocket: WebSocket):
                                             "output": output  # Send the result back as a JSON string
                                         }
                                     }))
-
                                     await openai_ws.send(json.dumps({"type": "response.create"}))
 
                                 except Exception as e:
                                     print(f"Error calling function: {e}")
-                                    # Optionally, send an error response back to OpenAI
                                     await openai_ws.send(json.dumps({
                                         "type": "response.cancel",  # Use a valid type for error responses
                                         "error": str(e)
                                     }))
-                                continue
+                                    continue
 
                     if response.get('type') == 'response.audio.delta' and 'delta' in response:
                         audio_payload = base64.b64encode(base64.b64decode(response['delta'])).decode('utf-8')
@@ -266,7 +259,7 @@ async def handle_media_stream(websocket: WebSocket):
 
                         await send_mark(websocket, stream_sid)
 
-                    # Trigger an interruption. Your use case might work better using `input_audio_buffer.speech_stopped`, or combining the two.
+                    # Trigger an interruption
                     if response.get('type') == 'input_audio_buffer.speech_started':
                         print("Speech started detected.")
                         if last_assistant_item:
@@ -327,14 +320,13 @@ async def send_initial_conversation_item(openai_ws):
             "content": [
                 {
                     "type": "input_text",
-                    "text": "Greet the user with 'Hello there! Thanks for calling company ABC. Hoew can I assist you today?'"
+                    "text": "Greet the user with 'Hello there! Thanks for calling company ABC. How can I assist you today?'"
                 }
             ]
         }
     }
     await openai_ws.send(json.dumps(initial_conversation_item))
     await openai_ws.send(json.dumps({"type": "response.create"}))
-
 
 async def initialize_session(openai_ws):
     """Control initial session with OpenAI."""
