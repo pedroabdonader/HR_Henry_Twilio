@@ -306,6 +306,9 @@ async def handle_media_stream(websocket: WebSocket):
                 await connection.send_json(mark_event)
                 mark_queue.append('responsePart')
 
+        response = VoiceResponse()
+        response.redirect('/hr/incoming-call', method="POST")
+
         await asyncio.gather(receive_from_twilio(), send_to_twilio())
 
 async def send_initial_conversation_item(openai_ws):
