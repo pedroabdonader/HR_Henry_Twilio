@@ -11,8 +11,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.websockets import WebSocketDisconnect
 from twilio.twiml.voice_response import VoiceResponse, Connect, Say, Stream
 from dotenv import load_dotenv
-import henry
-import echo
+from henry import app as henry_app  # Import the FastAPI app from henry
+from echo import app as echo_app      # Import the FastAPI app from echo
 
 load_dotenv()
 
@@ -28,13 +28,16 @@ You are a secretary AI voice assistant for company ABC. Your goal is to redirect
 VOICE = 'alloy'
 LOG_EVENT_TYPES = [
     'error', 'response.content.done', 'rate_limits.updated',
-    'response.done', 'input_audio_buffer.committed',
-    'input_audio_buffer.speech_stopped', 'input_audio_buffer.speech_started',
-    'session.created'
+    'response.done', 'input_audio_buffer.committed', 'input_audio_buffer.speech_stopped',
+    'input_audio_buffer.speech_started', 'session.created'
 ]
 SHOW_TIMING_MATH = False
 
 app = FastAPI()
+
+# Include the routes from henry and echo
+app.mount("/henry", henry_app)  # Mount henry's app under /henry
+app.mount("/echo", echo_app)      # Mount echo's app under /echo
 
 ##Function calling functions:
 def send_email(subject, body):
@@ -76,7 +79,7 @@ def route_call(department):
     """Route the call to the appropriate department."""
     response = VoiceResponse()
     try:
-        response.redirect(f'/{department}')
+        response.redirect(f'/{department}')  # This will now work with the mounted apps
     except ValueError as e:
         response.say(f"Sorry, I cannot route your call to {department}. Please try again. Error: {str(e)}")
         return str(e)
