@@ -73,8 +73,9 @@ def route_call(department):
     """Route the call to the appropriate department."""
     response = VoiceResponse()
     if department.lower() == "hr":
-        response.say("Connecting you to the hr department.")
-        response.dial("866-570-3759")  # Replace with actual sales department number
+        dial = Dial(caller_id='+18665703021')
+        dial.number('+18665703759')
+        response.append(dial)
     elif department.lower() == "copay":
         response.say("Connecting you to the copay card department.")
         response.dial("866-570-3049")  # Replace with actual support department number
