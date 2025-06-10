@@ -77,6 +77,7 @@ def send_email(subject, body):
 def route_call(department):
     """Route the call to the appropriate department."""
     response = VoiceResponse()
+    response.say("Routing Function runned")
     try:
         # Adjust the redirect to point to the correct mounted paths
         response.redirect(f'/{department.lower()}/incoming-call')  # Assuming you have an incoming-call endpoint in each app
