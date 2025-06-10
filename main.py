@@ -20,7 +20,7 @@ async def voice(request: Request):
     response = VoiceResponse()
     response.say("Thank you for calling. Please hold while we connect you to a representative.")
     response.dial("+18665703759")
-    return Response(str(response), mimetype='text/xml')
+    return "Response(str(response), mimetype='text/xml')"
 
 
 if __name__ == "__main__":
