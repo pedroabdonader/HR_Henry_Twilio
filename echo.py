@@ -17,13 +17,7 @@ load_dotenv()
 # Configuration
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 PORT = int(os.getenv('PORT', 5050))
-SYSTEM_MESSAGE = (
-"""
-System Message:
-You are Echo, a friendly voice Assistant
-"""
-)
-VOICE = 'echo'
+
 LOG_EVENT_TYPES = [
     'error', 'response.content.done', 'rate_limits.updated',
     'response.done', 'input_audio_buffer.committed',
@@ -102,7 +96,7 @@ if not OPENAI_API_KEY:
 async def index_page():
     return {"message": "Twilio Media Stream Server is running!"}
 
-@app.api_route("/incoming-call", methods=["GET", "POST"])
+@app.api_route("/echo", methods=["GET", "POST"])
 async def handle_incoming_call(request: Request):
     """Handle incoming call and return TwiML response to connect to Media Stream."""
     response = VoiceResponse()
@@ -306,6 +300,13 @@ async def send_initial_conversation_item(openai_ws):
 
 
 async def initialize_session(openai_ws):
+    SYSTEM_MESSAGE = (
+    """
+    System Message:
+    You are Echo, a friendly voice Assistant
+    """
+    )
+    VOICE = 'echo'
     """Control initial session with OpenAI."""
     session_update = {
         "type": "session.update",
