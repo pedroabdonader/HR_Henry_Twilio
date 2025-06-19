@@ -101,7 +101,7 @@ async def handle_incoming_call(request: Request):
     """Handle incoming call and return TwiML response to connect to Media Stream."""
     response = VoiceResponse()
     # <Say> punctuation to improve text-to-speech flow
-    response.say("Please wait while we connect your call to the A I voice assistant.")
+    #response.say("Please wait while we connect your call to the A I voice assistant.")
     response.pause(length=1)
     #response.say("O.K. you can start talking!")
     host = request.url.hostname
@@ -290,7 +290,7 @@ async def send_initial_conversation_item(openai_ws):
             "content": [
                 {
                     "type": "input_text",
-                    "text": "Greet the user with 'Hello there! I am here to help you to get your copay card, medication refill, financial assistant or just general medical questions. How can I help you today?'"
+                    "text": "Greet the user with 'Hello there! I noticed that you have an upcoming meeting scheduled on July 15, 2025, regarding Improving Operational Efficiency in Clinical Trials! What questions do you have or are there any trainings I should include in your curriculum?'"
                 }
             ]
         }
