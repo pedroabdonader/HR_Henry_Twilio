@@ -106,7 +106,7 @@ async def handle_incoming_call(request: Request):
     #response.say("O.K. you can start talking!")
     host = request.url.hostname
     connect = Connect()
-    connect.stream(url=f'wss://{host}/copay/media-stream')
+    connect.stream(url=f'wss://{host}/learning/media-stream')
     response.append(connect)
     return HTMLResponse(content=str(response), media_type="application/xml")
 
