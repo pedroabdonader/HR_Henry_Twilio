@@ -13,6 +13,7 @@ from twilio.twiml.voice_response import VoiceResponse, Connect, Say, Stream, Dia
 from dotenv import load_dotenv
 from hr import app as henry_app  # Import the FastAPI app from hr
 from copay import app as copay_app   # Import the FastAPI app from echo
+from learningCoach import app as learning_app
  
 load_dotenv()
  
@@ -32,6 +33,7 @@ app = FastAPI()
 # Include the routes from henry and echo
 app.mount("/hr", henry_app)  # Mount henry's app under /hr
 app.mount("/copay", copay_app)   # Mount echo's app under /echo
+app.mount("/learning", learning_app)
 
 ## Function calling functions
 def send_email(subject, body):
